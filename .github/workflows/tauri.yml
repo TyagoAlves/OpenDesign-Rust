@@ -137,6 +137,10 @@ jobs:
           pwsh -NoProfile -File scripts/check-embedded-bundle.ps1 -Exe target/release/app.exe -DistDir dist -FullAssetSet
           if ($LASTEXITCODE -ne 0) { throw 'Gate 1 reprovou o exe cru' }
           $sha = (Get-FileHash -LiteralPath target/release/app.exe -Algorithm SHA256).Hash
+          # O SHA tambem vai para um arquivo no workspace: o gate 2 le daqui,
+          # sem depender do contexto steps.<id>.outputs entre steps no runner.
+          Set-Content -LiteralPath target/gate1.sha -Value $sha -Encoding ascii -NoNewline
+          if (-not (Test-Path -LiteralPath target/gate1.sha)) { throw 'Falha ao gravar target/gate1.sha' }
           [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "exe_sha=$sha`n")
           Write-Host "EXE_GATEADO_SHA256=$sha"
 
@@ -150,14 +154,14 @@ jobs:
 
       - name: Gate 2 — exe inalterado após o bundle
         shell: pwsh
-        env:
-          EXPECTED_SHA: ${{ steps.gate1.outputs.exe_sha }}
         run: |
+          $expected = (Get-Content -LiteralPath target/gate1.sha -Raw).Trim()
+          if ([string]::IsNullOrWhiteSpace($expected)) { throw 'SHA do gate 1 veio vazio de target/gate1.sha' }
           pwsh -NoProfile -File scripts/check-embedded-bundle.ps1 -Exe target/release/app.exe -DistDir dist -FullAssetSet
           if ($LASTEXITCODE -ne 0) { throw 'Gate 2 reprovou o exe após o bundle' }
           $after = (Get-FileHash -LiteralPath target/release/app.exe -Algorithm SHA256).Hash
-          if ($after -cne $EXPECTED_SHA) {
-            throw "O bundle reescreveu o exe: esperado $EXPECTED_SHA, encontrado $after"
+          if ($after -cne $expected) {
+            throw "O bundle reescreveu o exe: esperado $expected, encontrado $after"
           }
           Write-Host "EXE_POS_BUNDLE_SHA256=$after (identico ao gate 1)"
 
