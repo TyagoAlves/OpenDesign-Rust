@@ -9,6 +9,16 @@
 <meta property="og:description" content="Editor de design open-source para Windows, local e gratuito. Um .exe, seus arquivos, nenhuma nuvem.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://tyagoalves.github.io/OpenDesign-Rust/">
+<link rel="canonical" href="https://tyagoalves.github.io/OpenDesign-Rust/">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:site_name" content="OpenDesign">
+<meta property="og:image" content="https://tyagoalves.github.io/OpenDesign-Rust/assets/readme-banner.png">
+<meta property="og:image:alt" content="Interface do editor OpenDesign com canvas e painéis de edição">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="OpenDesign — o editor de design gratuito que cabe num .exe">
+<meta name="twitter:description" content="Editor de design open-source para Windows em um .exe gratuito. Local, sem conta e sem nuvem.">
+<meta name="twitter:image" content="https://tyagoalves.github.io/OpenDesign-Rust/assets/readme-banner.png">
+<meta name="theme-color" content="#FBFBFB">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,9 +26,9 @@
 <style>
 :root{
   --primary:#26251E;--primary-hover:#3B3A33;--on-primary:#fff;
-  --ink:#1A202C;--subtle:#4A5262;--muted:#5B6472;--faint:#9AA1AC;
+  --ink:#1A202C;--subtle:#3F4755;--muted:#39414E;--faint:#9AA1AC;
   --canvas:#FBFBFB;--soft:#fff;--panel:#F1F1EF;--border:#E6E8EB;
-  --accent:#f5391e;--accent-ink:#D42D11;--accent-soft:#FFF1EE;--accent-line:#FCCFC5;
+  --accent:#B5230F;--accent-ink:#8E1B08;--accent-soft:#FFF1EE;--accent-line:#FCCFC5;
   --ok:#178A50;--warn:#B7791F;--danger:#B91C1C;
   --night:#0F1115;--ink-inverse:#F4F5F3;--accent-inverse:#FF7A63;
   --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:9999px;
@@ -31,6 +41,10 @@
 html{scroll-behavior:smooth}
 body{margin:0;background:linear-gradient(rgba(251,251,251,.84),rgba(251,251,251,.90)),url('assets/background.jpg') center center/cover fixed no-repeat,var(--canvas);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.55}
 a{color:inherit}
+/* Foco visível: 3px e contraste alto sobre fundo claro, imagem ou véu */
+:focus-visible{outline:3px solid #102A43;outline-offset:3px;box-shadow:0 0 0 5px rgba(255,255,255,.9)}
+.skip{position:absolute;left:14px;top:-90px;z-index:100;background:#102A43;color:#fff;padding:10px 16px;border-radius:var(--r-md);font-weight:600;font-size:14px;text-decoration:none;box-shadow:var(--sh-md)}
+.skip:focus{top:12px}
 .wrap{width:min(1120px,calc(100% - 40px));margin:0 auto}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:var(--r-md);font-weight:600;font-size:14px;text-decoration:none;border:1px solid transparent;transition:transform .15s ease,background .15s ease,border-color .15s ease;white-space:nowrap}
 .btn:hover{transform:translateY(-1px)}
@@ -176,10 +190,19 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
   .band{padding:26px}
   .notice__inner{font-size:12px}
 }
-@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;transform:none!important}}
+/* Parallax: camadas decorativas fora do fluxo; nunca cobrem nav, CTA ou aviso */
+.hero{position:relative;overflow:hidden}
+.hero__grid{position:relative;z-index:1}
+.px-layer{position:absolute;pointer-events:none;z-index:0;will-change:transform;user-select:none}
+.px-layer--l0{top:-12%;left:-6%;width:52%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(245,57,30,.10),rgba(245,57,30,0) 68%);filter:blur(2px)}
+.px-layer--l1{right:-8%;bottom:-18%;width:44%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(38,37,30,.10),rgba(38,37,30,0) 70%)}
+@media (max-width:640px), (pointer:coarse), (orientation:landscape) and (max-height:480px){.px-layer{display:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}.px-layer{transform:none!important}}
 </style>
 </head>
 <body>
+
+<a class="skip" href="#topo">Pular para o conteúdo</a>
 
 <header class="nav">
   <div class="wrap nav__bar">
@@ -204,8 +227,10 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
   </div>
 </div>
 
-<main id="topo">
+<main id="topo" tabindex="-1">
   <section class="hero">
+    <div class="px-layer px-layer--l0" data-parallax="0.06" aria-hidden="true"></div>
+    <div class="px-layer px-layer--l1" data-parallax="0.04" aria-hidden="true"></div>
     <div class="wrap hero__grid">
       <div>
         <span class="eyebrow">Open source · Windows · Gratuito</span>
@@ -325,7 +350,7 @@ conta / nuvem         <b>← inexistente</b></div>
         <p>O binário versionado tem 13.979.136 bytes e este SHA-256, conferidos em disco:</p>
       </div>
       <div class="code" id="hash">7F47B6D4FDAB2478EFF5EA35971A8A1AD74143CB5562A4C815DD02B42D63F7E1</div>
-      <p style="color:var(--muted);font-size:14px;max-width:760px">O frontend embutido neste artefato é <code style="font:12px var(--mono)">/assets/index-DbD7ieMa.js</code>, enquanto o <code style="font:12px var(--mono)">dist/</code> vigente aponta <code style="font:12px var(--mono)">index-BHWflTva.js</code>. Por isso o binário <b>não passa no gate de rastreabilidade</b> e é tratado como prévia. O procedimento de verificação está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#aplicativo-desktop-exe" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a>.</p>
+      <p style="color:var(--muted);font-size:14px;max-width:760px">O frontend embutido neste artefato é <code style="font:12px var(--mono)">/assets/index-DbD7ieMa.js</code>, que não corresponde ao <code style="font:12px var(--mono)">dist/</code> gerado no mesmo build. Por isso o binário <b>não passa no gate de rastreabilidade</b> e é tratado como prévia. O procedimento de verificação está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#aplicativo-desktop-exe" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a>.</p>
     </div>
   </section>
 
@@ -338,7 +363,7 @@ conta / nuvem         <b>← inexistente</b></div>
         <details><summary>Por que o aviso de prévia aparece no topo?</summary><p>Porque este binário ainda não passou no gate de QA que confere se o frontend embutido rastreia o <code>dist/</code> gerado no mesmo build. O go-live não foi aprovado. O aviso permanece até um build final ser verificado.</p></details>
         <details><summary>Onde meus projetos são salvos?</summary><p>Em um arquivo SQLite na pasta de dados do aplicativo no Windows: <code>%APPDATA%\com.opendesign.app\opendesign.db</code>. Nada é enviado para servidores.</p></details>
         <details><summary>Dá para usar os arquivos comercialmente?</summary><p>O código é MIT. Você pode usar o editor, adaptá-lo e distribuir seu trabalho. A marca OpenDesign e os logos permanecem com seus respectivos donos.</p></details>
-        <details><summary>Esta página é afiliada à Clawnify?</summary><p>Não. É uma página independente, feita para o fork <code>TyagoAlves/OpenDesign-Rust</code>. A inspiração é apenas visual; textos, marca e assets são do próprio projeto OpenDesign.</p></details>
+        <details><summary>Esta página é independente?</summary><p>Sim. É uma landing do fork <code>TyagoAlves/OpenDesign-Rust</code>. Identidade, textos e assets são do próprio projeto OpenDesign; não há vínculo com projetos de terceiros.</p></details>
       </div>
     </div>
   </section>
@@ -347,7 +372,7 @@ conta / nuvem         <b>← inexistente</b></div>
     <div class="wrap">
       <span class="eyebrow">Código aberto · execução local</span>
       <h2>Faça design sem depender de ninguém.</h2>
-      <p>Baixe a prévia, explore o editor e acompanhe o projeto. Quando o build final passar no QA, o download passa a ser uma release de verdade.</p>
+      <p>Baixe a prévia, explore o editor e acompanhe o projeto. Quando o build final passar no QA e houver OK do Tyago, o aviso de prévia será atualizado.</p>
       <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
       <p class="final__note">Prévia em validação · não é uma release aprovada · use por sua conta e risco</p>
     </div>
@@ -356,7 +381,7 @@ conta / nuvem         <b>← inexistente</b></div>
 
 <footer>
   <div class="wrap footer__row">
-    <span>© 2026 OpenDesign · MIT · Página independente, não afiliada à Clawnify.</span>
+    <span>© 2026 OpenDesign · MIT · Landing independente do fork TyagoAlves/OpenDesign-Rust.</span>
     <span class="footer__links">
       <a href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">Repositório ↗</a>
       <a href="https://github.com/TyagoAlves/OpenDesign-Rust#aplicativo-desktop-exe" target="_blank" rel="noopener">Documentação ↗</a>
@@ -365,6 +390,7 @@ conta / nuvem         <b>← inexistente</b></div>
   </div>
 </footer>
 
+<script src="assets/parallax.js" defer></script>
 <script>
 (function(){
   var b=document.getElementById('burger'),n=document.getElementById('navlinks');
