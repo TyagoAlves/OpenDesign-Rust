@@ -2,17 +2,34 @@
 
 Data: 2026-11-20 · Liderança: Renata · Escopo: comandos Rust ↔ frontend para salvar/carregar designs e exportar PNG/PDF localmente.
 
+> **`pré-go-live — não normativo`** — rótulo literal aplicado por decisão do Tyago.
+> Este documento registra o que existe em disco e as pendências; não é
+> autorização de build, publicação ou go-live. Decisões finais, somente o Tyago
+> neste canal.
+
+> **Atualização desta rodada (preparação, sem build/publicação).** O contrato de
+> export passou a ter um único caminho: `pick_save_path` abre o diálogo no Rust e
+> devolve `{ path, nonce }`; `export_png`/`export_pdf` exigem o nonce quando há
+> `destination` e o consomem antes do `fs::write`. O fallback legado
+> `plugin:dialog|save` foi removido do bridge porque devolve caminho sem nonce e
+> o Rust o rejeita. `capabilities/default.json` e `src-tauri/Cargo.toml` seguem
+> **intactos** — remover `dialog:allow-save` seria decisão nova, só com o Tyago.
+> A capacidade permanece aprovada e registrada, mas não é mais exercida pelo
+> fluxo ativo. O comportamento MCP de confirmação por arquivo e “lembrar nesta
+> sessão” é contrato da Fase 2 (`docs/mcp-ux.md` §5, AC-21/MCP-16), **não ativado
+> aqui**; esta bridge apenas fornece o `pick_save_path` + nonce one-shot.
+
 > Decisão do Tyago (canal direto): a persistência local é o **adaptador SQLite da Daniela** em `src/client/api.ts` (`local-db.ts`). Os 4 comandos de design em JSON continuam no código, mas **fora do caminho ativo** — registrar os dois geraria um 2º storage divergente.
 
 ## Arquivos
 
 | Arquivo | Papel |
 |---|---|
-| `src-tauri/src/commands.rs` | 6 comandos `#[tauri::command]` (4 dormentes + 2 exports ativos), helpers de sanitização/base64 |
-| `src-tauri/src/lib.rs` | `mod commands`, plugins SQL/dialog/log, splash da Melissa, `invoke_handler` com `app_ready` + 2 exports |
-| `src-tauri/Cargo.toml` | `tauri-plugin-sql` + `tauri-plugin-dialog` |
-| `src-tauri/capabilities/default.json` | `core:default`, `dialog:allow-save`, 4 permissões SQL |
-| `src/client/lib/tauri-bridge.ts` | `isTauri()`, `invoke()` tipado, `pickSavePath()`, wrappers de designs/exports |
+| `src-tauri/src/commands.rs` | 7 comandos `#[tauri::command]` (4 dormentes + `pick_save_path` + 2 exports), helpers de sanitização/base64 e `ExportTokens` |
+| `src-tauri/src/lib.rs` | `mod commands`, plugins SQL/dialog/log, splash da Melissa, `invoke_handler` com `app_ready`, `pick_save_path` e 2 exports; `.manage(ExportTokens::default())` |
+| `src-tauri/Cargo.toml` | `tauri-plugin-sql` + `tauri-plugin-dialog` — **sem alteração nesta rodada, nenhuma dependência nova** |
+| `src-tauri/capabilities/default.json` | `core:default`, `dialog:allow-save` (aprovada, mantida), `sql:allow-execute/load/select` — sem `fs:*` |
+| `src/client/lib/tauri-bridge.ts` | `isTauri()`, `invoke()` tipado, `pickSavePath()` (somente `pick_save_path`, falha fechado), `saveDataURLNative()` (nonce obrigatório com destino) |
 | `src/client/lib/export.ts` | `downloadDataURL()` abre o diálogo e grava via Rust; `exportPagesToPDF()` usa data URL no desktop (browser intacto) |
 
 Sem `@tauri-apps/api`: o invoke passa direto por `window.__TAURI_INTERNALS__`. Nada publicado/commitado.
@@ -27,13 +44,15 @@ Todos usam `window.__TAURI_INTERNALS__.invoke` (o mesmo que `@tauri-apps/api` ch
 | `load_design` | `{ id }` | `{ version, id, name, document }` (string) |
 | `list_designs` | — | array de `{ id, name, path, modifiedAt }`, ordenado por `modifiedAt` desc |
 | `delete_design` | `{ id }` | `void` |
-| `export_png` | `{ dataUrl, filename, destination? }` | `{ path, bytes }` |
-| `export_pdf` | `{ dataUrl, filename, destination? }` | `{ path, bytes }` |
-| `plugin:dialog|save` (plugin) | `{ options: { title, filters, defaultPath } }` | caminho absoluto ou `null` (cancelado) |
+| `pick_save_path` | `{ filename, kind }` | `{ path, nonce }`; cancelamento → `{ path: null, nonce: null }` |
+| `export_png` | `{ dataUrl, filename, destination?, nonce? }` | `{ path, bytes }` |
+| `export_pdf` | `{ dataUrl, filename, destination?, nonce? }` | `{ path, bytes }` |
 
-Os argumentos são camelCase no JS (o Tauri converte para os nomes snake_case do Rust). Os retornos usam `#[serde(rename_all = "camelCase")]`. `destination` é opcional: ausente, o export vai para `<app data dir>/exports/`; presente, o Rust valida a extensão antes de escrever.
+Os 4 primeiros comandos da tabela (designs) continuam **fora do `invoke_handler`**. Os quatro ativos são `app_ready`, `pick_save_path`, `export_png`, `export_pdf`. Os argumentos são camelCase no JS (o Tauri converte para os nomes snake_case do Rust); os retornos usam `#[serde(rename_all = "camelCase")]`.
 
-> Conferido no crate `tauri-plugin-dialog 2.8.4`: o comando é `plugin:dialog|save` com `{ options }` e o campo de nome inicial é **`defaultPath`** (não `filename`). A permissão correspondente é `dialog:allow-save`.
+`destination` é opcional: ausente, o export vai para `<app data dir>/exports/`; presente, exige `nonce`. O nonce é gerado no Rust em `pick_save_path`, mapeado ao caminho escolhido num `Mutex<HashMap>` gerenciado pelo app, e **removido antes do `fs::write`**. Sem nonce, nonce inválido/já usado ou caminho divergente → erro e nenhuma gravação. A extensão é validada tanto ao emitir o nonce quanto ao escrever.
+
+> Não há mais invoke de `plugin:dialog|save` no bridge. O diálogo é aberto no Rust por `DialogExt::blocking_save_file()` (`tauri-plugin-dialog 2.8.4`), que não depende de capability de JS; `dialog:allow-save` permanece na capability por decisão aprovada, mas não é exercida pelo fluxo ativo. Removê-la exigiria decisão nova do Tyago.
 
 ### Onde os arquivos param
 
@@ -60,13 +79,24 @@ Por padrão o frontend envia só `id`/`filename`, sanitizados no Rust (sem `/`, 
 
 ## Exports
 
-- **PNG:** `renderPageToPNG()` → `downloadDataURL()` → diálogo → `export_png` → disco. Vale para página única e para o lote (`exportAllPNG`, um diálogo por página).
-- **PDF:** `exportPagesToPDF()` → `doc.output("dataurlstring")` → `downloadDataURL()` → diálogo → `export_pdf`. No browser continua `doc.save(filename)` exatamente como antes.
-- **Diálogo nativo (autorizado pelo Tyago, dúvida 3/4):** `pickSavePath()` chama `plugin:dialog|save` com filtro PNG/PDF e `defaultPath: filename`. Se o usuário escolher um destino, `destination` é passado ao comando Rust; se cancelar, nada é gravado; se o plugin/permissão falhar, cai para o fallback antigo em app data dir; no browser, segue o `<a download>`.
+- **PNG:** `renderPageToPNG()` → `downloadDataURL()` → `pickSavePath()` → `export_png` → disco. Vale para página única e para o lote (`exportAllPNG`, um diálogo por página).
+- **PDF:** `exportPagesToPDF()` → `doc.output("dataurlstring")` → `downloadDataURL()` → `pickSavePath()` → `export_pdf`. No browser continua `doc.save(filename)` exatamente como antes.
+- **Diálogo nativo (autorizado pelo Tyago, dúvida 3/4):** `pickSavePath()` chama apenas `pick_save_path`. O Rust abre o diálogo, devolve `{ path, nonce }` e o bridge repassa ambos a `saveDataURLNative()`. Cancelar → `path: null`, nada gravado. Caminho sem nonce → `ok: false` no bridge (falha fechada) e o chamador usa o fallback em app data dir. Se o comando falhar, o bridge devolve `ok: false` com o motivo; nunca fabrica um `destination`. No browser, segue o `<a download>`.
 
-O caminho escolhido vira um arquivo real (o Rust valida a extensão e cria a pasta pai, se necessário). A antiga gravação em `<app data dir>/exports/` permanece como fallback.
+O caminho escolhido vira um arquivo real (o Rust valida a extensão e cria a pasta pai, se necessário). A antiga gravação em `<app data dir>/exports/` permanece como fallback para quando não há destino confirmado. Cada `nonce` serve para **uma** operação e apenas para o caminho emitido; reutilização é recusada no Rust.
 
 ## Verificação feita
+
+**Rodada atual (preparação, sem build de instalador nem publicação):**
+
+- `pnpm test` → **17/17**, 0 falhas, exit **0**.
+- `cargo check --offline` → exit **0**, sem erros; 12 warnings de comandos dormentes (esperados).
+- `pnpm exec tsc --noEmit --strict --target es2020 --module esnext --moduleResolution bundler --lib 'es2020,dom' src/client/lib/tauri-bridge.ts` → exit **0**. (`node --check` não se aplica à fonte `.ts`: o Node 22 reporta `Unexpected identifier 'InvokeFn'` nas declarações de tipo; é limitação do verificador de sintaxe JS, não erro da bridge.)
+- `src-tauri/Cargo.toml`: nenhuma dependência nova; `tauri-plugin-fs` aparece só como transitivo de `tauri-plugin-dialog` no `Cargo.lock`.
+- `capabilities/default.json`: `core:default`, `dialog:allow-save`, `sql:allow-execute/load/select` — sem `fs:*`, sem `fs:scope`, sem `assetProtocol`.
+- **PENDÊNCIA EXPLÍCITA — gate do `dist/` stale reprovado (decisão do Tyago: NÃO fazer build).** O registro de release é `78/78` assets, exe de 13.946.880 bytes, SHA-256 `D57E2866…ACF74` (README/QA) — o exe publicado está intacto. A reexecução local do gate contra o `dist/` vigente **reprova**: `dist/index.html` referencia `./assets/index-B8HL4cME.js`, enquanto o exe publicado embute `/assets/index-BCxGHaIP.js` (assets do novo `dist/` também ausentes no PE). Motivo: o `dist/` local foi reconstruído depois do release. Refrescar o gate exigiria **`pnpm build`** para regenerar o frontend e um novo build do exe — **fora do meu escopo nesta rodada e sem autorização**. Não houve rebuild, commit, push, tag, release, CI, gh-pages ou publicação; a pendência fica registrada para decisão do Tyago.
+
+Os itens abaixo são o histórico das rodadas anteriores.
 
 - `pnpm exec tsc --noEmit --strict … src/client/lib/tauri-bridge.ts src/client/lib/export.ts` → **exit 0**.
 - `pnpm run build` (Vite) → **exit 0** (bundle contém `plugin:dialog|save`, `export_png`, `export_pdf`, `__TAURI_INTERNALS__`).
@@ -132,8 +162,8 @@ Todo o conteúdo desta seção e da seguinte é **levantamento técnico/contrato
 
 - **Toolchain:** Build Tools 2022 (VCTools/Desktop C++) instalado com autorização do Tyago; linker verificado. `cargo check --offline` passa. **Não reinstalar nada.**
 - **Persistência:** uma única fonte de verdade (SQLite da Daniela). Os 4 comandos de design em JSON seguem em `commands.rs` como referência, **fora do `invoke_handler`** (`lib.rs:87-91`: só `app_ready`, `export_png`, `export_pdf`). Sem segundo storage/caminho de gravação.
-- **Diálogo "Salvar como":** aprovado e implementado — `tauri-plugin-dialog` (`Cargo.toml:30`), `dialog:allow-save` (`capabilities/default.json:11`), init em `lib.rs:79`. Frontend chama `plugin:dialog|save` (`pickSavePath` em `tauri-bridge.ts:136-149`) e passa o caminho a `export_png`/`export_pdf` (`commands.rs:360-395`); cancelar não salva. Nenhum plugin de download/comando novo necessário; exports fallback em `<app data dir>/exports` mantidos.
-- **Propriedade de arquivos:** `tauri-bridge.ts` é da Renata e `export.ts` é o caminho validado pelo QA (`export.ts:30-60`, `:97-111`). Eu **não editei nenhum dos dois nesta rodada** (só leitura para o contrato FS); coordenação com a Renata para ninguém sobrescrever a bridge na rodada 2. Meus arquivos de dono exclusivo: `lib.rs`, `commands.rs`, `capabilities`, `migrations`.
+- **Diálogo "Salvar como":** aprovado e implementado — `tauri-plugin-dialog` (`Cargo.toml:30`), `dialog:allow-save` (`capabilities/default.json:11`, mantida), init em `lib.rs:81`. Frontend chama **`pick_save_path`** (`pickSavePath()`) e repassa `{ path, nonce }` a `export_png`/`export_pdf` (`write_export` consome o nonce antes do `fs::write`); cancelar não salva. O comando de diálogo é síncrono de propósito (`blocking_save_file()`). Não há mais `plugin:dialog|save` no bridge. Nenhum plugin de download/comando novo necessário; fallback em `<app data dir>/exports` mantido.
+- **Propriedade de arquivos (contrato atual do Tyago):** domínio exclusivo do Luan: `tauri-bridge.ts`, `commands.rs`, `lib.rs`, `capabilities/default.json`, `docs/tauri-bridge-ag07.md` e o apoio de landing em `.pages-wt/parallax-staging/AG-07-fatos-e-previa.md`. `export.ts` **não** é meu (`export.ts:30-60`, `:97-111`): continuei sem editá-lo; a assinatura de `pickSavePath()`/`saveDataURLNative()` não mudou, só o caminho interno. Qualquer arquivo fora dessa lista exige coordenação com a Renata. Nesta rodada `Cargo.toml`, config/CSP e capabilities não foram alterados.
 - **CSP — correção de informação:** `font-src 'self' data:` **já está em disco** (`tauri.conf.json:43` e `devCsp:44`); a pendência antiga não existe mais. A ampliação de `img-src`/`font-src` com `http://asset.localhost` + `asset:` ficou **fora desta rodada** — só entraria com a conversão FS na próxima entrega, com nova autorização.
 - **Fontes/uploads — decisão definitiva (repassada pelo Rafael, canal do Tyago):** nesta rodada vale a implementação da Daniela (SQLite + `data:`/interceptador), já validada (10/10 rotas locais) e incluída no `OpenDesign.exe`. A conversão para Tauri FS + `asset://` fica **para a próxima entrega**. Minha parte Rust segue documentada/pronta no plano acima, **sem aplicar**: `Cargo.toml`, `lib.rs`, `capabilities`, `tauri.conf.json` e CSP intactos.
 - **Pedido conflitante de aplicação imediata (registro, não autorização):** chegou uma mensagem pedindo para aplicar o plugin Rust "agora" e afirmando que a decisão de adiamento teria vindo de canal inválido. Isso contradiz diretamente a decisão definitiva recebida neste mesmo canal. Confirmei os nomes/argumentos dos invokes no crate local (`fs` em `tauri-plugin-fs-2.7.1/src/lib.rs:561-589`; `mkdir` `:413-419`, `read_dir` `:461-467`, `read_file` `:623-629`, `write_file` lê path/options dos headers e bytes do body `:1132-1148`; `path|resolve_directory` em `tauri-2.12.7/src/path/plugin.rs:88-94`; Windows `http://asset.localhost/<encoded>` em `webview/mod.rs:2697`, `asset://localhost` só nos outros SO `:2710-2713`) **sem editar nada**. Mantido o hold até confirmação explícita do Tyago neste canal. **Resolução (nova confirmação do Tyago, correção factual — não permissão nova):** a decisão final desta rodada é **DataURL no SQLite** para `/api/fonts` e `/api/uploads/*`, sem `tauri-plugin-fs`, sem `asset://`, sem `assetProtocol`. O pedido de aplicação imediata foi **rejeitado**; o contrato AG-07 (`m-mwpbph39-424-4KgMKirkDBJk`) nunca foi a decisão vigente. Conferido em disco: `Cargo.toml`, `lib.rs` e `capabilities/default.json` sem FS; `Cargo.lock:4251` contém `tauri-plugin-fs 2.7.1` apenas como **transitivo de `tauri-plugin-dialog`** (`Cargo.lock:4245`), não como dependência direta. A CSP aprovada cobre `data:` em `img-src`/`font-src`, mas não `asset:`/`http://asset.localhost` — ativar FS sem registro, permissões, escopo e diretivas quebraria logos/fontes; auditoria recomenda não ativar. FS+`asset://` permanece postergado para a próxima entrega.

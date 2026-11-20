@@ -339,8 +339,12 @@ pub fn delete_design(app: AppHandle, id: String) -> Result<(), String> {
 /// Abre o diálogo nativo "Salvar como" no lado Rust e devolve o caminho junto
 /// com um nonce one-shot. O frontend deve repassar AMBOS a export_png/export_pdf;
 /// o nonce só é aceito uma vez e apenas para o caminho emitido aqui.
+///
+/// É síncrono de propósito: `blocking_save_file()` bloqueia até o usuário
+/// responder, então o comando roda na pool de comandos do Tauri, não no runtime
+/// assíncrono compartilhado com os demais invokes.
 #[tauri::command]
-pub async fn pick_save_path(
+pub fn pick_save_path(
     app: AppHandle,
     state: State<'_, ExportTokens>,
     filename: String,

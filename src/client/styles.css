@@ -81,3 +81,53 @@ select {
   background-position: right 8px center;
   padding-right: 28px;
 }
+
+/* Agent access (MCP) â€” Fase 1 */
+.agent-access { max-width: 760px; margin: 0 auto; padding: 20px; color: #18181b; }
+.agent-access__path { font-size: 12px; color: #71717a; margin: 0 0 4px; }
+.agent-access__header h2 { font-size: 20px; margin: 0 0 6px; }
+.agent-access__intro { margin: 0 0 14px; color: #3f3f46; line-height: 1.5; }
+.agent-access__card { background: #fff; border: 1px solid #e2e5eb; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.agent-access__row { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.agent-access__row--option { align-items: flex-start; }
+.agent-access__label { margin: 0; font-size: 14px; }
+.agent-access__hint { margin: 2px 0 0; font-size: 12px; color: #52525b; line-height: 1.45; }
+.agent-access__warning { background: #f8fafc; border: 1px solid #dbe3ee; border-left: 4px solid #6366f1; border-radius: 8px; padding: 10px 12px; }
+.agent-access__warning p { margin: 0; font-size: 13px; line-height: 1.5; color: #27272a; }
+.agent-access-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; padding: 8px 10px; border-radius: 8px; width: fit-content; }
+.agent-access-status__icon { flex: 0 0 auto; }
+.agent-access-status--off { background: #f4f4f5; color: #3f3f46; }
+.agent-access-status--waiting { background: #fffbeb; color: #92400e; }
+.agent-access-status--connected { background: #f0fdf4; color: #166534; }
+.agent-access-status--port-error { background: #fef2f2; color: #991b1b; }
+.agent-access__error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.agent-access__error p { margin: 0; color: #7f1d1d; font-size: 13px; }
+.agent-access-switch { position: relative; width: 44px; height: 24px; border-radius: 999px; border: 1px solid #cbd5e1; background: #e4e4e7; cursor: pointer; padding: 0; flex: 0 0 auto; }
+.agent-access-switch.is-on { background: #6366f1; border-color: #6366f1; }
+.agent-access-switch__thumb { position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s ease; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.agent-access-switch.is-on .agent-access-switch__thumb { transform: translateX(20px); }
+.agent-access-switch:disabled { opacity: .6; cursor: not-allowed; }
+.agent-access-check { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.agent-access-check input { margin-top: 3px; }
+.agent-access-check input:disabled { cursor: not-allowed; }
+.agent-access__snippets { display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #e4e4e7; padding-top: 12px; }
+.agent-access-snippet { border: 1px solid #e4e4e7; border-radius: 8px; padding: 10px; background: #fafafa; }
+.agent-access-snippet__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.agent-access-snippet__label { font-weight: 600; font-size: 13px; }
+.agent-access-code { margin: 8px 0 0; background: #18181b; color: #f4f4f5; border-radius: 8px; padding: 10px; overflow: auto; font-size: 12px; line-height: 1.45; }
+.agent-access-muted { margin: 6px 0 0; font-size: 12px; color: #52525b; }
+.agent-access__token-row { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.agent-access__token-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.agent-access__token-value { margin: 0; font-size: 12px; background: #f4f4f5; border: 1px solid #e4e4e7; border-radius: 6px; padding: 8px; word-break: break-all; }
+.agent-access__notice { margin: 0; font-size: 12px; color: #166534; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px; }
+.agent-access__actions { border-top: 1px solid #e4e4e7; padding-top: 12px; }
+.agent-access-btn { border: 1px solid #6366f1; background: #6366f1; color: #fff; border-radius: 8px; padding: 7px 12px; font-size: 13px; cursor: pointer; }
+.agent-access-btn:hover:not(:disabled) { background: #4f46e5; }
+.agent-access-btn--ghost { background: #fff; color: #27272a; border-color: #d4d4d8; }
+.agent-access-btn--ghost:hover:not(:disabled) { background: #f4f4f5; }
+.agent-access-btn--danger { background: #fff; color: #b91c1c; border-color: #fca5a5; }
+.agent-access-btn--danger:hover:not(:disabled) { background: #fef2f2; }
+.agent-access-btn:disabled { opacity: .5; cursor: not-allowed; }
+.agent-access .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.agent-access code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.95em; }
+

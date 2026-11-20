@@ -5,13 +5,15 @@ import { useBrandKits } from "./hooks/use-brand-kits";
 import { useRouter } from "./hooks/use-router";
 import { Editor } from "./components/editor";
 import { Home } from "./components/home";
+import { Settings } from "./components/settings";
+import { tr } from "./i18n";
 import { useFonts } from "./fonts";
 import { AppNav, reportLocation } from "@clawnify/app/client";
 import { useEffect, useRef } from "preact/hooks";
 import { isTauri, signalAppReady } from "./lib/tauri";
 
 export function App() {
-  const { path, navigate, designId } = useRouter();
+  const { path, navigate, designId, isSettings } = useRouter();
   const saveSchedulerRef = useRef<() => void>(() => {});
   const canvasState = useCanvasState(() => saveSchedulerRef.current());
   const designState = useDesigns(canvasState.getCanvasJSONForPage, canvasState.getCanvasSize);
@@ -73,9 +75,14 @@ export function App() {
     <AppNav
       title="Projeto"
       icon="image"
-      active={designId ?? "home"}
+      active={designId ?? (isSettings ? "settings" : "home")}
       groups={[
-        { items: [{ id: "home", label: "Projetos", icon: "layout-grid", href: "/", home: true }] },
+        {
+          items: [
+            { id: "home", label: "Projetos", icon: "layout-grid", href: "/", home: true },
+            { id: "settings", label: tr("Configurações"), icon: "settings", href: "/settings" },
+          ],
+        },
         {
           label: "Projetos recentes",
           items: designState.designs.map((d) => ({ id: d.id, label: d.name, icon: "image", href: `/design/${d.id}` })),
@@ -124,6 +131,17 @@ export function App() {
           <p class="text-zinc-400 text-sm">Carregando…</p>
         </div>
       </div>
+      </>
+    );
+  }
+
+  // Settings view (Gate 1 MCP: Acesso do agente)
+  if (isSettings) {
+    return (
+      <>
+      {hostNav}
+      {persistenceError}
+      <Settings />
       </>
     );
   }

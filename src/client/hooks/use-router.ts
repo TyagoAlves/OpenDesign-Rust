@@ -34,6 +34,7 @@ export function useRouter() {
   // Parse /design/:id
   const match = path.match(/^\/design\/([^/]+)$/);
   const designId = match ? match[1] : null;
+  const isSettings = path === "/settings" || path.startsWith("/settings/");
 
-  return { path, navigate, designId };
+  return { path, navigate, designId, isSettings };
 }

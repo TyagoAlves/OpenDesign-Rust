@@ -115,67 +115,50 @@ export function dataURLKind(dataURL: string): ExportKind | null {
 /**
  * Resultado do diálogo nativo "Salvar como".
  * `path: null` significa que o usuário cancelou; `ok: false` significa que o
- * comando não está disponível (permissão ausente, plugin não registrado etc.).
- * `nonce` é um token one-shot por operação devolvido junto com o destino
- * escolhido e deve ser enviado de volta ao comando de export (nunca reutilizado).
+ * comando não está disponível ou quebrou o contrato one-shot. `nonce` é um
+ * token por operação devolvido junto com o destino e deve voltar ao comando de
+ * export exatamente uma vez. Nunca há destino utilizável sem nonce.
  */
 export type SavePathResult =
   | { ok: true; path: string | null; nonce?: string }
   | { ok: false; reason: string };
 
-interface DialogSaveOptions {
-  title: string;
-  filters: Array<{ name: string; extensions: string[] }>;
-  /** Nome inicial (o Rust trata como arquivo, não como diretório). */
-  defaultPath: string;
+interface SavePathTicket {
+  path?: string | null;
+  nonce?: string | null;
 }
 
 /**
- * Abre o diálogo nativo e obtém o destino do export.
- * Fluxo preferencial (one-shot): comando Rust `pick_save_path` devolve
- * `destination`/`path` junto com `nonce` por operação.
- * Fallback: `plugin:dialog|save` (sem nonce), para compatibilidade.
+ * Abre o diálogo nativo no Rust via `pick_save_path`, que devolve `{ path,
+ * nonce }`. O nonce é one-shot: cada export precisa do seu. Falha fechado se
+ * vier caminho sem nonce — nesse caso o chamador usa o fallback em app data dir.
+ * Não existe mais o caminho legado `plugin:dialog|save`: ele devolve só o
+ * caminho, sem nonce, e o Rust rejeita qualquer `destination` desacompanhado.
  */
 export async function pickSavePath(filename: string, kind: ExportKind): Promise<SavePathResult> {
   if (!isTauri()) return { ok: false, reason: "não está no Tauri" };
-  const options: DialogSaveOptions = {
-    title: kind === "png" ? "Salvar imagem PNG" : "Salvar documento PDF",
-    filters: [{ name: kind.toUpperCase(), extensions: [kind] }],
-    defaultPath: filename,
-  };
 
   try {
-    const result = await invoke<
-      { destination?: string | null; path?: string | null; nonce?: string | null } | string | null
-    >("pick_save_path", { filename, kind, options });
-    if (result && typeof result === "object") {
-      const destination =
-        typeof result.destination === "string" && result.destination
-          ? result.destination
-          : typeof result.path === "string" && result.path
-            ? result.path
-            : null;
-      const nonce = typeof result.nonce === "string" && result.nonce ? result.nonce : undefined;
-      return { ok: true, path: destination, ...(nonce ? { nonce } : {}) };
-    }
-    return { ok: true, path: typeof result === "string" && result ? result : null };
-  } catch {
-    // Fallback para o fluxo anterior (sem nonce).
-  }
+    const result = await invoke<SavePathTicket | null>("pick_save_path", { filename, kind });
+    const path = result && typeof result === "object" && typeof result.path === "string"
+      ? result.path
+      : null;
+    if (!path) return { ok: true, path: null }; // usuário cancelou
 
-  try {
-    const chosen = await invoke<string | null>("plugin:dialog|save", { options });
-    return { ok: true, path: typeof chosen === "string" && chosen ? chosen : null };
+    const nonce = result && typeof result.nonce === "string" && result.nonce
+      ? result.nonce
+      : null;
+    if (!nonce) return { ok: false, reason: "pick_save_path devolveu caminho sem nonce" };
+    return { ok: true, path, nonce };
   } catch (e) {
     return { ok: false, reason: e instanceof Error ? e.message : String(e) };
   }
 }
 
 /**
- * Salva um data URL via Rust. Com `destination` (caminho escolhido no diálogo)
- * escreve lá; sem ele, mantém o fallback em `<app data dir>/exports/`.
- * Quando o destino vem do fluxo one-shot, `nonce` deve ser enviado junto e não
- * pode ser reutilizado.
+ * Salva um data URL via Rust. Com `destination`, o `nonce` é obrigatório e é
+ * consumido uma única vez no Rust antes do `fs::write`; sem destino, mantém o
+ * fallback em `<app data dir>/exports/`. Nenhum caminho é aceito sem nonce.
  * Retorna `null` no browser (o chamador faz o download normal).
  */
 export async function saveDataURLNative(
@@ -189,8 +172,9 @@ export async function saveDataURLNative(
   if (!kind) throw new Error("Export nativo aceita só data URLs PNG ou PDF em base64");
   const args: Record<string, unknown> = { dataUrl: dataURL, filename };
   if (destination) {
+    if (!nonce) throw new Error("destino de export exige nonce one-shot de pick_save_path");
     args.destination = destination;
-    if (nonce) args.nonce = nonce;
+    args.nonce = nonce;
   }
   return invoke<ExportResult>(kind === "png" ? "export_png" : "export_pdf", args);
 }
