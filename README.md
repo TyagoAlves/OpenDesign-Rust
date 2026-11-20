@@ -2,8 +2,6 @@
 
 # OpenDesign: A alternativa open-source ao Canva para SaaS
 
-[![Deploy with Clawnify](https://app.clawnify.com/deploy-button.svg)](https://app.clawnify.com/deploy?repo=clawnify/OpenDesign)
-
 Um editor de design para criar gráficos profissionais para redes sociais — posts do LinkedIn, quote cards, anúncios e muito mais. Parte do ecossistema [OpenClaw](https://github.com/openclaw/openclaw). Sem dependências de nuvem — roda localmente com SQLite.
 
 Construído com **Preact + Fabric.js + Tailwind CSS + Hono + SQLite**. Vem com uma interface de editor escura inspirada no Figma, renderização de canvas em retina e templates de posts do LinkedIn prontos para uso.
