@@ -6,6 +6,14 @@
 # dentro de OpenDesign/. NÃO foi commitado, pushado, tagueado nem publicado.
 # OK explícito do Tyago é necessário para commitar/pushar (e, depois, tag/release).
 #
+# Edição da coordenação (20/11): separar build e bundle para que o exe embutido
+# nos instaladores seja EXATAMENTE o exe que passou no gate. Sequência:
+#   pnpm test → build cru → gate 1 (-FullAssetSet) → bundle MSI/NSIS
+#   (--no-binary-patching --no-sign) → gate 2 + comparação de SHA → artefatos
+#   → release RASCUNHO somente em push de tag v*.
+# O tauri-action foi removido: ele faz build + bundle numa única chamada, sem
+# deixar o gate rodar entre as duas etapas e sem --no-binary-patching.
+#
 # Decisões do Tyago (dúvida 7/8 do Douglas, 2026-11-20):
 #   - MATRIX REDUZIDA A WINDOWS nesta rodada. macOS e Linux voltam depois, com
 #     OK do Tyago. Não há Mac no time nem autorização para conta Apple
@@ -13,10 +21,15 @@
 #   - INSTALADOR SÓ NO CI: o tauri.conf.json canônico de src-tauri/ NÃO muda
 #     (bundle.active:false para o .exe cru local). Este job gera MSI + NSIS
 #     com um override de config exclusivo do CI (src-tauri/ci-build.json).
-#   - Gatilho inalterado: push em tag v* → release RASCUNHO (releaseDraft:true);
+#   - Gatilho inalterado: push em tag v* → release RASCUNHO (releaseDraft);
 #     workflow_dispatch → dry-run, NENHUM release. Publish manual depois do QA
 #     do Douglas e do OK explícito do Tyago. Nada disso é autorização para
 #     criar/pushar tag ou publicar release agora.
+#   - ASSINATURA DESLIGADA nesta rodada: `--no-sign` explícito no bundle, sem
+#     secrets WINDOWS_*. O patching de binário também é desligado de propósito:
+#     sem `--no-binary-patching` o bundler reescreve o exe in-place e o SHA-256
+#     muda, reprovando o gate 2. Se o Tyago quiser assinar, isso entra num novo
+#     ciclo de QA — não é alteração silenciosa dentro deste job.
 # ============================================================================
 
 name: Build desktop (Tauri — Windows)
@@ -54,7 +67,7 @@ jobs:
       # O projeto usa pnpm (pnpm-lock.yaml v9), NAO npm. @tauri-apps/cli já
       # está em devDependencies — não precisa "npm install --save-dev".
       - name: pnpm 10.34.9
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4 (commit de v4^{})
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         with:
           version: 10.34.9
           run_install: false
@@ -75,35 +88,19 @@ jobs:
 
       # O workspace tem [profile.release] lto = true no Cargo.toml da raiz.
       - name: Cache Cargo
-        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2 (commit de v2^{})
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+
+      - name: Testes (17/17)
+        run: pnpm test
 
       # Override EXCLUSIVO DO CI: herda todo o tauri.conf.json canônico e
       # sobrescreve somente `bundle` (active:true + MSI/NSIS). O config local
-      # permanece com active:false para o .exe cru. Se os secrets WINDOWS_*
-      # estiverem completos, o thumbprint entra no MESMO JSON — um único
-      # --config na chamada do build (nunca dois --config).
-      # Nenhum secret é exportado como variável vazia: o bundler da Tauri usa
-      # var_os() e trataria "" como "presente", quebrando o build.
+      # permanece com active:false para o .exe cru. Nenhum secret é exportado
+      # como variável vazia: o bundler usa var_os() e trataria "" como presente.
       - name: Preparar config de CI (instaladores MSI + NSIS)
         shell: bash
-        env:
-          _WIN_CERT: ${{ secrets.WINDOWS_CERTIFICATE }}
-          _WIN_PASS: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
-          _WIN_THUMB: ${{ secrets.WINDOWS_CERTIFICATE_THUMBPRINT }}
         run: |
           set -euo pipefail
-
-          if [ -n "$_WIN_CERT" ] && [ -n "$_WIN_PASS" ] && [ -n "$_WIN_THUMB" ]; then
-            printf '%s' "$_WIN_CERT" | base64 --decode > "$RUNNER_TEMP/opendesign.pfx"
-            PFX_PATH="$RUNNER_TEMP/opendesign.pfx" PFX_PASS="$_WIN_PASS" \
-              powershell -NoProfile -Command 'Import-PfxCertificate -FilePath $env:PFX_PATH -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString -String $env:PFX_PASS -Force -AsPlainText) | Out-Null'
-            CI_THUMBPRINT="$_WIN_THUMB"
-            export CI_THUMBPRINT
-            echo "::notice::Windows: certificado importado — instaladores serao assinados"
-          else
-            echo "::notice::Windows: secrets de assinatura incompletos — instaladores SEM assinatura"
-          fi
-
           node <<'NODE'
           const fs = require('fs');
           const base = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
@@ -112,12 +109,6 @@ jobs:
             active: true,
             targets: ['msi', 'nsis'],
           };
-          if (process.env.CI_THUMBPRINT) {
-            bundle.windows = {
-              ...(bundle.windows || {}),
-              certificateThumbprint: process.env.CI_THUMBPRINT,
-            };
-          }
           fs.writeFileSync('src-tauri/ci-build.json', JSON.stringify({ ...base, bundle }, null, 2) + '\n');
           NODE
 
@@ -128,26 +119,75 @@ jobs:
         continue-on-error: true
         run: pnpm tauri info
 
-      # tauri-action faz o build com UM único --config e publica os bundles
-      # MSI + NSIS como artifacts do workflow. Release só em push de tag v*.
-      - name: Build e upload dos instaladores
-        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1 (commit de v1^{})
+      # UM único build cru: o beforeBuildCommand (pnpm build) regenera o dist/,
+      # o Rust embute esse dist no target/release/app.exe. É a única vez em que
+      # frontend + Rust são compilados neste job. Depois disso, só bundle.
+      - name: Build cru (sem instalador)
+        run: pnpm tauri build --no-bundle --config src-tauri/ci-build.json
+
+      - name: Gate 1 — bundle embutido no exe cru
+        id: gate1
+        shell: pwsh
+        run: |
+          Write-Host '--- referencia do dist deste build ---'
+          Select-String -Path dist/index.html -Pattern 'assets/index-[^"'']+\.js' | ForEach-Object { $_.Line.Trim() }
+          pwsh -NoProfile -File scripts/check-embedded-bundle.ps1 -Exe target/release/app.exe -DistDir dist -FullAssetSet
+          if ($LASTEXITCODE -ne 0) { throw 'Gate 1 reprovou o exe cru' }
+          $sha = (Get-FileHash -LiteralPath target/release/app.exe -Algorithm SHA256).Hash
+          [System.IO.File]::AppendAllText($env:GITHUB_OUTPUT, "exe_sha=$sha`n")
+          Write-Host "EXE_GATEADO_SHA256=$sha"
+
+      # tauri bundle = "Generate bundles ... (already built by tauri build)".
+      # Não há beforeBundleCommand na config, então o frontend não é reconstruído.
+      # --no-binary-patching é OBRIGATÓRIO: sem ele o installer reescreve o PE
+      # in-place e o SHA muda. --no-sign torna determinística a decisão de não
+      # assinar nesta rodada.
+      - name: Bundle MSI + NSIS (reaproveita o exe gateado)
+        run: pnpm tauri bundle --bundles msi nsis --config src-tauri/ci-build.json --no-binary-patching --no-sign --ci
+
+      - name: Gate 2 — exe inalterado após o bundle
+        shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EXPECTED_SHA: ${{ steps.gate1.outputs.exe_sha }}
+        run: |
+          pwsh -NoProfile -File scripts/check-embedded-bundle.ps1 -Exe target/release/app.exe -DistDir dist -FullAssetSet
+          if ($LASTEXITCODE -ne 0) { throw 'Gate 2 reprovou o exe após o bundle' }
+          $after = (Get-FileHash -LiteralPath target/release/app.exe -Algorithm SHA256).Hash
+          if ($after -cne $EXPECTED_SHA) {
+            throw "O bundle reescreveu o exe: esperado $EXPECTED_SHA, encontrado $after"
+          }
+          Write-Host "EXE_POS_BUNDLE_SHA256=$after (identico ao gate 1)"
+
+      # O Douglas confere o item 8 (exe extraído do instalador) localmente:
+      # MSI: msiexec /a ... /qb TARGETDIR=... · NSIS: instalação silenciosa em
+      # temp. Varrer MSI/NSIS comprimido é falso negativo e está vetado.
+      - name: Upload artefatos (exe gateado + instaladores)
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
-          projectPath: ./
-          tauriScript: pnpm tauri
-          # Release SOMENTE em push de tag v*. No disparo manual, tagName e
-          # releaseName ficam vazios: o tauri-action não cria release e apenas
-          # anexa os bundles como workflow artifacts.
-          tagName: ${{ github.event_name == 'push' && github.ref_name || '' }}
-          releaseName: ${{ github.event_name == 'push' && format('OpenDesign {0}', github.ref_name) || '' }}
-          releaseBody: 'Instaladores MSI e NSIS do OpenDesign gerados a partir da tag — RASCUNHO, revisar antes de publicar.'
-          releaseDraft: true
-          prerelease: false
-          # Updater não está configurado em tauri.conf.json.
-          uploadUpdaterJson: false
-          uploadWorkflowArtifacts: true
-          # beforeBuildCommand (pnpm build) vem do config base herdado.
-          # UM único --config; nunca repetir a flag na mesma chamada.
-          args: --config src-tauri/ci-build.json
+          name: opendesign-windows-${{ github.run_id }}
+          path: |
+            target/release/app.exe
+            target/release/bundle/msi/*.msi
+            target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+      - name: Release RASCUNHO (somente push de tag v*)
+        if: github.event_name == 'push'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $msi = @(Get-ChildItem -Path target/release/bundle/msi -Filter '*.msi' -File)
+          $nsis = @(Get-ChildItem -Path target/release/bundle/nsis -Filter '*.exe' -File)
+          if ($msi.Count -eq 0 -or $nsis.Count -eq 0) {
+            throw "Instaladores ausentes: MSI=$($msi.Count) NSIS=$($nsis.Count)"
+          }
+          $files = @($msi.FullName) + @($nsis.FullName)
+          $notes = 'Instaladores MSI e NSIS gerados no CI com build/bundle separados e gate de rastreabilidade. RASCUNHO — revisar QA do Douglas e obter OK do Tyago antes de publicar.'
+          $ghArgs = @('release', 'create', $env:RELEASE_TAG) + $files + @(
+            '--draft',
+            '--title', "OpenDesign $env:RELEASE_TAG",
+            '--notes', $notes
+          )
+          gh @ghArgs

@@ -76,8 +76,8 @@ pub fn run() {
         .build(),
     )
     // Diálogo nativo "Salvar como": `pick_save_path` abre o diálogo no Rust e
-    // devolve { path, token }; export_png/export_pdf aceitam o destino só com
-    // esse token one-shot, ainda não usado (autorizado pelo Tyago).
+    // devolve { path, nonce }; export_png/export_pdf aceitam o destino só com
+    // esse nonce one-shot, ainda não usado (autorizado pelo Tyago).
     .plugin(tauri_plugin_dialog::init())
     .manage(ExportTokens::default())
     .manage(Mutex::new(SplashState {

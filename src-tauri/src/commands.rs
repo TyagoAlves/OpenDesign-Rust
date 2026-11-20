@@ -5,7 +5,7 @@
 //! Por padrão nenhum caminho é aceito do frontend: arquivos ficam sob o app
 //! data dir, com nomes sanitizados. A única exceção é o `destination` opcional
 //! dos exports, que vem do diálogo nativo "Salvar como" (plugin dialog) — e só
-//! é aceito se vier acompanhado do token one-shot emitido por `pick_save_path`
+//! é aceito se vier acompanhado do nonce one-shot emitido por `pick_save_path`
 //! para aquele mesmo caminho. A extensão continua sendo validada antes de gravar.
 
 use std::collections::HashMap;
@@ -54,20 +54,21 @@ pub struct ExportResult {
     pub bytes: u64,
 }
 
-/// Tokens one-shot emitidos por `pick_save_path`: token -> caminho escolhido.
-/// Nenhum `destination` vindo do frontend é aceito sem um token ainda não usado.
+/// Nonces one-shot emitidos por `pick_save_path`: nonce -> caminho escolhido.
+/// Nenhum `destination` vindo do frontend é aceito sem um nonce ainda não usado.
 #[derive(Default)]
 pub struct ExportTokens {
     tokens: Mutex<HashMap<String, String>>,
     seq: AtomicU64,
 }
 
-/// Retorno do diálogo nativo. `path`/`token` são `null` quando o usuário cancela.
+/// Retorno do diálogo nativo. `path`/`nonce` são `null` quando o usuário cancela.
+/// O nome `nonce` é o contrato já usado pelo frontend (`tauri-bridge.ts`).
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SavePathTicket {
     pub path: Option<String>,
-    pub token: Option<String>,
+    pub nonce: Option<String>,
 }
 
 impl ExportTokens {
@@ -77,26 +78,26 @@ impl ExportTokens {
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_nanos())
             .unwrap_or(0);
-        let token = format!("exp-{}-{seq}-{nanos:016x}", std::process::id());
+        let nonce = format!("exp-{}-{seq}-{nanos:016x}", std::process::id());
         if let Ok(mut tokens) = self.tokens.lock() {
-            tokens.insert(token.clone(), path);
+            tokens.insert(nonce.clone(), path);
         }
-        token
+        nonce
     }
 
-    /// Consome o token apenas se ele foi emitido para exatamente este caminho.
-    fn consume(&self, token: &str, destination: &str) -> Result<(), String> {
+    /// Consome o nonce apenas se ele foi emitido para exatamente este caminho.
+    fn consume(&self, nonce: &str, destination: &str) -> Result<(), String> {
         let mut tokens = self
             .tokens
             .lock()
-            .map_err(|_| "estado de tokens de export indisponível".to_string())?;
+            .map_err(|_| "estado de nonces de export indisponível".to_string())?;
         let issued = tokens
-            .get(token)
-            .ok_or_else(|| "token de export inválido ou já usado".to_string())?;
+            .get(nonce)
+            .ok_or_else(|| "nonce de export inválido ou já usado".to_string())?;
         if issued.trim() != destination.trim() {
-            return Err("token de export não corresponde ao caminho escolhido".to_string());
+            return Err("nonce de export não corresponde ao caminho escolhido".to_string());
         }
-        tokens.remove(token);
+        tokens.remove(nonce);
         Ok(())
     }
 }
@@ -336,8 +337,8 @@ pub fn delete_design(app: AppHandle, id: String) -> Result<(), String> {
 // ── exports ───────────────────────────────────────────────────────────
 
 /// Abre o diálogo nativo "Salvar como" no lado Rust e devolve o caminho junto
-/// com um token one-shot. O frontend deve repassar AMBOS a export_png/export_pdf;
-/// o token só é aceito uma vez e apenas para o caminho emitido aqui.
+/// com um nonce one-shot. O frontend deve repassar AMBOS a export_png/export_pdf;
+/// o nonce só é aceito uma vez e apenas para o caminho emitido aqui.
 #[tauri::command]
 pub async fn pick_save_path(
     app: AppHandle,
@@ -367,14 +368,14 @@ pub async fn pick_save_path(
     let Some(file_path) = chosen else {
         return Ok(SavePathTicket {
             path: None,
-            token: None,
+            nonce: None,
         });
     };
     let path = file_path
         .into_path()
         .map_err(|e| format!("caminho escolhido inválido: {e}"))?;
 
-    // Valida a extensão antes de emitir o token: não gastamos o nonce num
+    // Valida a extensão antes de emitir o nonce: não gastamos o nonce num
     // caminho que o export rejeitaria de qualquer forma.
     match path.extension().and_then(|e| e.to_str()) {
         Some(current) if current.eq_ignore_ascii_case(ext) => {}
@@ -387,10 +388,10 @@ pub async fn pick_save_path(
     }
 
     let path = path.to_string_lossy().into_owned();
-    let token = state.issue(path.clone());
+    let nonce = state.issue(path.clone());
     Ok(SavePathTicket {
         path: Some(path),
-        token: Some(token),
+        nonce: Some(nonce),
     })
 }
 
@@ -402,7 +403,7 @@ fn write_export(
     ext: &str,
     allowed_mime: fn(&str) -> bool,
     destination: Option<&str>,
-    token: Option<&str>,
+    nonce: Option<&str>,
 ) -> Result<ExportResult, String> {
     let (mime, bytes) = decode_data_url(data_url)?;
     if !allowed_mime(mime) {
@@ -437,14 +438,14 @@ fn write_export(
                 }
             }
             // O frontend NUNCA escolhe um destino por conta própria: ele só
-            // repete o caminho/devolve o token que `pick_save_path` emitiu.
-            let token = token
+            // repete o caminho/devolve o nonce que `pick_save_path` emitiu.
+            let nonce = nonce
                 .map(str::trim)
                 .filter(|t| !t.is_empty())
                 .ok_or_else(|| {
-                    "destino escolhido exige token one-shot de pick_save_path".to_string()
+                    "destino escolhido exige nonce one-shot de pick_save_path".to_string()
                 })?;
-            tokens.consume(token, chosen)?;
+            tokens.consume(nonce, chosen)?;
             path
         }
         None => {
@@ -486,7 +487,7 @@ pub fn export_png(
     data_url: String,
     filename: String,
     destination: Option<String>,
-    token: Option<String>,
+    nonce: Option<String>,
 ) -> Result<ExportResult, String> {
     write_export(
         &app,
@@ -496,7 +497,7 @@ pub fn export_png(
         "png",
         |mime| mime.eq_ignore_ascii_case("image/png"),
         destination.as_deref(),
-        token.as_deref(),
+        nonce.as_deref(),
     )
 }
 
@@ -507,7 +508,7 @@ pub fn export_pdf(
     data_url: String,
     filename: String,
     destination: Option<String>,
-    token: Option<String>,
+    nonce: Option<String>,
 ) -> Result<ExportResult, String> {
     write_export(
         &app,
@@ -520,6 +521,6 @@ pub fn export_pdf(
                 || mime.eq_ignore_ascii_case("application/octet-stream")
         },
         destination.as_deref(),
-        token.as_deref(),
+        nonce.as_deref(),
     )
 }

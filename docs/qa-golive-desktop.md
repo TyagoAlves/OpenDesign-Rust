@@ -848,3 +848,360 @@ ficar verde, **esse binário versionado estará desatualizado** — precisa ser
 substituído em **novo commit**, cuja decisão é do Tyago. Douglas não faz
 commit/push por conta própria. Zero commit/push/tag/release/publish sem OK
 explícito; escrita só em `OpenDesign/`.
+
+### BUG DE CONTRATO encontrado antes do build (20/11, verificação em disco)
+
+As 4 correções dos donos **entraram em disco** e foram confirmadas uma a uma:
+
+| # | Correção | Evidência em disco | Estado |
+|---|---|---|---|
+| 1 | TOKEN one-shot Rust | `commands.rs:57-102,342-449`; `lib.rs:82,92` | ✅ |
+| 2 | TOKEN one-shot bridge | `tauri-bridge.ts:119-196` (`pickSavePath` → `invoke("pick_save_path")`, `saveDataURLNative` com 4º arg) | ✅ |
+| 3 | `dataUrlToBlob` | `kit-transfer.ts:17` helper; `:53` e `:107` sem `fetch(data:)` | ✅ |
+| 4 | 17 testes | `package.json:9` com fields + fonts + **local-db.test.ts** | ✅ |
+
+**MAS o build NÃO pode seguir: os nomes de campo não casam entre Rust e TS.**
+
+- Rust `pick_save_path` devolve `SavePathTicket { path, token }`
+  (`commands.rs:65-71`, `serde(rename_all="camelCase")` → JSON `{path, token}`).
+- Frontend `pickSavePath()` lê `destination`/`path`/**`nonce`**
+  (`tauri-bridge.ts:149,158`) — **não lê `token`**. Resultado: `nonce` fica
+  `undefined`, o token emitido pelo Rust é **descartado**.
+- `export.ts:38` passa `picked.nonce` (undefined) para `saveDataURLNative`, que
+  só seta `args.nonce` se ele existir (`tauri-bridge.ts:193`) — ou seja, o invoke
+  de `export_png`/`export_pdf` vai **sem nonce e sem token**.
+- Rust `export_png`/`export_pdf` esperam parâmetro **`token: Option<String>`**
+  (`commands.rs:489,510`) — **não `nonce`**. Com `destination` preenchido e sem
+  token, `write_export:441-446` rejeita: "destino escolhido exige token
+  one-shot de pick_save_path".
+
+**Efeito:** fluxo one-shot quebrado de ponta a ponta — todo export com diálogo
+native falha (fail-closed); só o fallback sem `destination` funciona. O smoke
+deste item reprovaria. **Não rodei build.** Como Luan e Renata não estavam mais no snapshot do bridge
+(reiniciou; só Hugo e Douglas presentes), encaminhei o bloqueio ao Hugo
+(mensagem `m-mwpfa3qf-540-1gmXP3QmpwQb`, `delivered`) para a coordenação alinhar
+o contrato (padronizar `token` ↔ `token` ou `nonce` ↔ `nonce` nos dois lados); a
+correção é dos donos, Douglas não edita arquivos alheios.
+
+Com todos online novamente (13 agentes no snapshot), reportei o bug **direto ao
+Luan** (`m-mwpfb2tk-541-fdPvftsgFlxk`, `delivered`) pedindo o parecer dele sobre
+padronizar: (A) Rust devolver/aceitar `nonce` ou (B) a Renata mudar o TS para
+`token`. **Renata não estava no snapshot** nesta checagem, então o repasse a ela
+fica condicionado à resposta do Luan.
+
+### BUG RESOLVIDO — opção A adotada (Luan, 20/11 17:22)
+
+Luan escolheu a **opção A** (padronizar `nonce`, o nome que o TS da Renata já lê
+em `:158` e envia em `:193`) e reaplicou **somente** em `commands.rs`/`lib.rs`.
+Verificado em disco:
+
+- `SavePathTicket { path, nonce }` (`commands.rs:67-72`, camelCase) — casamento
+  exato com o que `tauri-bridge.ts:149,158` lê.
+- `issue()` gera `exp-<pid>-<seq>-<nanos>` e mapeia nonce→caminho (`:75-86`);
+  `consume()` (`:89-102`) exige nonce existente, compara com o `destination`
+  exato (`:97`) e **remove antes de devolver** (`:100`).
+- `write_export` (`:442-448`) exige nonce com `destination` e consome antes do
+  `fs::write`. `export_png`/`export_pdf`Now aceitam `nonce: Option<String>`
+  (`:490`, `:511`). Fallback sem `destination` segue sem nonce (`:451+`).
+- `lib.rs:79` comentário atualizado para `{ path, nonce }`; handler e `manage`
+  inalterados.
+
+**Contrato ponta a ponta agora casa:** `pick_save_path → {path, nonce} →
+saveDataURLNative(..., nonce) → export_png/pdf({destination, nonce})`. Nota do
+Luan (não é edição dele): `tauri-bridge.ts:162-171` ainda tem fallback para
+`plugin:dialog|save` sem nonce — se esse caminho for tomado, o export com
+`destination` é rejeitado de propósito (fail-closed); o fluxo normal casa.
+
+Todos os 4 critérios ✅ + bug de contrato resolvido → **autorizado o build
+único**. Registrando a execução abaixo.
+
+### Build único executado + re-baseline do gate (20/11 17:26)
+
+`pnpm tauri build --no-bundle` — **exit 0**. Observação: `cargo` não estava no
+PATH da sessão, mas existe em `C:\Users\tyago\.cargo\bin\cargo.exe` (1.100.0);
+PATH ajustado **apenas no processo do comando**, sem alterar o sistema.
+`beforeBuildCommand: pnpm build` regenerou o `dist` conforme esperado.
+
+**Congelado — nova referência do gate (resultado do build, não valor pré-fixado):**
+
+- `dist/index.html` → `./assets/index-40VDMZ9b.js`
+- SHA-256 do bundle: `89AD0B46BCF7639E8192F093961EA7BE129BD3B8553433955D27B65B7BD850FD`
+- Exe gateado: `target/release/app.exe`, 13.932.544 bytes, 17:26:16,
+  SHA-256 `083EFD65E1A5F12C38FA2A7044C90C8F2E2C414280F8B9845C98D330341878C4`
+- CSS: `index-OOFQx10i.css`; jspdf: `jspdf.es.min-D-uDRAq2.js`
+
+**Gate 1 (exe cru) — APROVADO, exit 0:** leitura estável em 2 tentativas
+(SHA `083EFD65…78C4`); PE `/assets/index-40VDMZ9b.js` =
+`dist/index.html` `./assets/index-40VDMZ9b.js`; hash do bundle
+`89AD0B46…50FD`; FullAssetSet 78/78 assets presentes. Sem divergências.
+
+**Promoção do exe final (autorizada pelo Tyago):** copiei o exe gateado para
+`Release/OpenDesign.exe` — SHA-256 `083EFD65…78C4` idêntico ao de
+`target/release/app.exe`. `git status` local agora mostra `M
+Release/OpenDesign.exe` (binário versionado divergente do commit `862de17`),
+além de `M docs/qa-golive-desktop.md`, `M src-tauri/src/commands.rs`,
+`M src-tauri/src/lib.rs` (mudanças dos donos) e `?? .pages-wt/` (worktree que não
+é meu). **Nenhum commit/push/tag/release**; a substituição do binário versionado
+em novo commit é decisão do Tyago.
+
+### Smoke final no exe gateado (20/11, CDP/WebView2) — PASSOU com 1 BUG NOVO
+
+Rodei o exe promovido (`083EFD65…78C4`) com CDP isolado
+(`WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223`,
+`WEBVIEW2_USER_DATA_FOLDER` temporário). Resultados:
+
+| Cenário | Resultado |
+|---|---|
+| Abrir app / UI | OK — "Meus projetos" renderiza, 7 projetos no SQLite local |
+| Bundle carregado | OK — `http://tauri.localhost/assets/index-40VDMZ9b.js` (o do gate) |
+| CSP real de release | OK — `script-src 'self'` + 3 hashes, sem `unsafe-inline`/`unsafe-eval`; `font-src 'self' data:`; `connect-src 'self' ipc: ipc.localhost` |
+| Script inline via DOM | OK — bloqueado (flag 0 + `Log.entryAdded` `security`) |
+| `invoke('app_ready')` | OK |
+| Criar projeto via UI | OK — 0→1, navegou para `/design/<id>` |
+| Persistência (voltar à raiz + reload) | OK — lista mostra "7 projetos" |
+| Export `destination` sem nonce | OK — rejeitado: "destino escolhido exige nonce one-shot de pick_save_path" |
+| Export `destination` com nonce inválido | OK — rejeitado: "nonce de export inválido ou já usado" |
+| Console (erros não-security) | Zero |
+| **Reload dentro de `/design/<id>`** | ❌ **BUG — tela em branco** |
+
+**BUG NOVO — reload em rota aninhada (BLOQUEANTE):**
+
+- `use-router.ts:6-8` usa History API (`pushState` para `/design/<id>`).
+- `app.tsx:112` expõe botão "Recarregar" que chama `window.location.reload()`.
+- `vite.config.ts:15` define `base: "./"`, gerando
+  `dist/index.html:9` com `src="./assets/index-40VDMZ9b.js"`.
+- Resultado: ao recarregar em `/design/<id>`, o browser resolve o script como
+  `http://tauri.localhost/design/assets/index-40VDMZ9b.js` → servidor devolve o
+  HTML → `SyntaxError: Unexpected token '<'` → `<div id="app">` fica vazio.
+- **Reproduzido 2×** via CDP (`Page.reload` e `location.reload`); confirmado
+  que navegar para `/` e recarregar funciona, e que o erro é o caminho relativo,
+  não persistência (o design foi criado e gravado no SQLite).
+- Correção típica: `base: "/"` no Vite **ou** roteamento por hash **ou** `<base
+  href="/">` no `index.html`. **Não editei nada** — `vite.config.ts`/`app.tsx`/
+  `use-router.ts` são de outros donos. Reportado ao canal para decisão
+  (`m-mwpforlv-560-Lz4F5rLuvMW8`, `delivered`).
+- Como mudar o `base` altera o hash do bundle, a correção exige **novo build
+  único → re-baseline do gate → smoke**, conforme o procedimento acordado.
+
+### Descompasso de estado no repasse da coordenação (registrado)
+
+A coordenação repassou (via Hugo) que o Tyago decidiu padronizar em `nonce` e
+que o Luan "seria acionado agora" para renomear `SavePathTicket`/`token` →
+`nonce`, mandando segurar o build até a confirmação dele.
+
+**Isso já está feito e verificado nesta sessão — não é pendência:**
+
+- `commands.rs` e `lib.rs` estão com `nonce` desde **17:22** (verificação acima:
+  `SavePathTicket {path, nonce}`, `consume()` com remoção única, validação de
+  extensão, fallback sem nonce preservado, `export_png/pdf` com `nonce`).
+- O build único **já rodou** (17:26, exit 0), o **gate 1 passou** e o smoke
+  confirmou o fail-closed do nonce. Nada regrediu: `commands.rs` segue 17:22,
+  exe gateado/promovido segue `083EFD65…78C4`, `dist` segue `index-40VDMZ9b.js`.
+
+Presumo que o repasse da coordenação ainda não Processou meus relatórios
+(`m-mwpfb2tk-541-fdPvftsgFlxk` ao Luan e `m-mwpforlv-560-Lz4F5rLuvMW8` ao Hugo,
+ambos `delivered`). Esclareci ao canal que a pendência real **não é o nonce** —
+é o **bug do reload em `/design/<id>`** (bloqueante), que exige decisão de quem
+corrige o `base` do Vite e novo build único. Seguro o build até essa decisão.
+Esclarecimento enviado ao Hugo (`m-mwpfqb1x-561-tL5PUhnW7Rdw`, `delivered`).
+
+### Retomada da sequência — teste verde, build segurado no bug do reload
+
+Liberação da coordenação para retomar o build recebida. Antes de buildar,
+confirmei em disco que o **bug do reload ainda não foi corrigido**:
+`vite.config.ts:15` continua `base: "./"` (14:21, intocado) e `app.tsx:112`
+continua com `window.location.reload()`. Perguntado ao Tyago, decisão:
+**corrigir o `base` primeiro**.
+
+Investigação sem editar arquivo alheio: `pnpm exec vite build --base=/`
+funciona e gera `dist/index.html` com `src="/assets/index-BroDqmkX.js"`,
+confirmando que `base: "/"` resolve o caminho. **Mas não basta passar a flag
+no build manual**: o `beforeBuildCommand: pnpm build` do Tauri regeneraria o
+`dist` sem a flag no `tauri build --no-bundle`. A correção precisa ser
+**permanente no `vite.config.ts`** (ou `<base href="/">` no `index.html`, ou
+roteamento por hash) — todos arquivos de outros donos. Pedi a atribuição ao
+canal; **não editei nada**.
+
+✅ **`pnpm test` executado: 17/17 passou, exit 0** (fields 13 + fonts 1 +
+local-db 3). Primeiro item da sequência verde. O teste não mexeu no `dist`.
+
+**Estado do `dist` após a investigação:** temporariamente com
+`index-BroDqmkX.js` (teste `--base=/`), **não rastreável** com o exe atual
+(`083EFD65…78C4`, que embute `index-40VDMZ9b.js`). O gate não foi rodado nesse
+estado. O próximo build único regenerará o `dist` e o exe juntos, com o `base`
+já corrigido, e só então farei o re-baseline + gate + smoke. Pedido de
+atribuição enviado ao Hugo (`m-mwpfsxqz-566-rD3jh6dryUWg`, `delivered`).
+
+**BUG DO RELOAD RESOLVIDO pela coordenação (17:32, verificado em disco agora):**
+em vez de mexer no `base` do Vite, corrigiram o roteador pela **opção hash** —
+`use-router.ts:3-32` agora lê/escreve `window.location.hash` (`#/design/<id>`) e
+escuta `hashchange`, sem `pushState`. `git diff -- vite.config.ts` está vazio, ou
+seja, `base: "./"` permanece — e não precisa mudar: com hash routing a URL
+continua `http://tauri.localhost/#/design/<id>`, onde `./assets/...` resolve na
+raiz. Todas as navegações da UI passam por `navigate()` (`home.tsx`,
+`design-list.tsx`, `toolbar.tsx`), que agora gera hashes; o botão "Recarregar" de
+`app.tsx:112` recarregará a raiz com hash. `use-router.ts` aparece como `M` no
+git (17:32:50) e o branch `main` avançou para `052d413` (commits de docs do
+time de site/README, não meus). **Não editei nenhum desses arquivos.**
+
+Nota de escopo (Tyago): time de site com parallax isolado no branch `gh-pages`
+(worktree `.pages-wt/`, `c46ea58`) — Douglas não escreve arquivo de site, foca no
+QA/build do `.exe`. Nada de publicar/trocar o aviso de prévia sem QA verde e OK
+final do Tyago. Pedido de confirmação para retomar o build enviado ao Hugo
+(`m-mwpfu819-568-59NuaGEEQYmc`, `delivered`) — a correção veio por hash routing,
+caminho diferente do "corrigir o `base`" decidido antes.
+
+### Decisão formal do Tyago sobre o bug do reload (registrada)
+
+Tyago decidiu: **Renata corrige com hash router em
+`src/client/hooks/use-router.ts`, preservando `base: "./"` e o protocolo do
+Tauri**. Douglas deve **segurar o novo build até a Renata confirmar a correção
+em disco e a coordenação avisar**. Quando liberado, repetir a sequência:
+`pnpm test` (17) → build cru único → re-baseline do hash do `dist` no gate →
+gate → smoke (atenção especial ao **item 5, CRUD/reload em `/design/<id>`**) →
+MSI/NSIS no CI com `--no-binary-patching` → gate final. Gate 1 e smoke anteriores
+ficam como evidência do build `083EFD65…78C4`; o bundle muda com a correção.
+
+**Checagem única em disco ao receber a decisão:** `use-router.ts` já traz o hash
+router desde 17:32:50 (`readHashPath` `:3`, `window.location.hash` `:4,18-19`,
+`hashchange` `:26,29`, sem `pushState`); `vite.config.ts:15` segue `base: "./"`.
+Já reportei esse estado ao Hugo em `m-mwpfu819-568` (`delivered`). Ainda assim,
+**respeitando a instrução**: não retomei o build — aguardando o aviso explícito
+da coordenação de que a Renata confirmou. O `dist` segue temporariamente com
+`index-BroDqmkX.js` (teste `--base=/`), que será regenerado no build único com o
+`base: "./"` correto. Go-live segue **BLOQUEADO** até QA verde + OK final do
+Tyago; zero commit/push/tag/release/publish; escrita só em `OpenDesign/`.
+
+**Esclarecimento final da coordenação:** decisão do Tyago é **NÃO alterar o
+`vite.config.ts`** — `base: "./"` permanece. O teste `--base=/` foi apenas
+diagnóstico (prova o caminho), **não é a correção aprovada**; trocar o base pode
+quebrar o protocolo do Tauri (`vite.config.ts:12-14`). Correção aprovada = hash
+router da Renata, já em disco às 17:32:50 (`use-router.ts` de 670 → 1.244 bytes,
+sem `pushState`, lendo/escrevendo `window.location.hash`, ouvindo `hashchange` +
+`popstate`; API `{path, navigate, designId}` intacta, callers não precisam
+mudar). Renata ainda validava `pnpm test` (17); aguardar o relatório dela e a
+liberação explícita antes do build. Douglas NÃO rodou build novo e NÃO mudou o
+base. Aviso de cortesia enviado à Renata (`m-mwpfvj2t-572-Eph8l8ovx_hO` e
+`m-mwpfx08x-574-wekDT2kiGVDB`, ambos `delivered`) registrando que os 17 testes já
+passaram aqui, sem pressionar sua validação.
+
+### Rodada final — build com hash router (20/11 17:40)
+
+Liberação da coordenação recebida. Sequência executada:
+
+1. ✅ **`pnpm test`: 17/17, exit 0** (reconfirmado após a correção da Renata).
+2. ✅ **Build cru único**: `pnpm tauri build --no-bundle`, **exit 0**, PATH do
+   cargo (`C:\Users\tyago\.cargo\bin`) ajustado apenas no processo. `6342`
+   módulos; `Finished release profile in 2m 03s`; 12 warnings de `dead_code` em
+   `commands.rs` (comandos JSON legados fora do caminho ativo — coerentes).
+3. **Nova referência do gate (resultado do build, não valor pré-fixado):**
+   - `dist/index.html` → `./assets/index-B8HL4cME.js`
+   - SHA-256 do bundle: `50DDA7CE183237C43D5E66B1C795DAD608B67C0483C7A451D9C7DC660FE1575E`
+   - CSS `index-BblPk0-K.css`; jspdf `jspdf.es.min-DVxXlAC1.js`
+   - Exe gateado: `target/release/app.exe`, 13.933.056 bytes, 17:40:31,
+     SHA-256 `3D56E6F3901FABEEC3360A7A43FB442F2B88A67D922CEE8FD8ECF30C20D2FB9D`
+   - O `dist` voltou ao `./assets/...` correto (o temporário `--base=/` foi
+     regenerado pelo `beforeBuildCommand`).
+   - **Não usei** o exe versionado nem o `dist` temporário como referência.
+
+**Gate 1 (exe cru) — APROVADO, exit 0:** leitura estável em 2 tentativas (SHA
+`3D56E6F3…B9D`); PE `/assets/index-B8HL4cME.js` = `dist/index.html`
+`./assets/index-B8HL4cME.js`; hash do bundle `50DDA7CE…575E`; FullAssetSet 78/78.
+Sem divergências.
+
+**Promoção do exe final (procedimento já autorizado pelo Tyago):** copiei o exe
+gateado para `Release/OpenDesign.exe`, SHA-256 idêntico `3D56E6F3…B9D`.
+`git status` segue com `M Release/OpenDesign.exe`; substituição do binário
+versionado em novo commit é decisão do Tyago. **Nenhum commit/push/tag/release.**
+
+#### Smoke final no exe gateado (CDP/WebView2, 20/11) — ✅ TUDO PASSOU
+
+Exe `3D56E6F3…B9D` rodado com `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223` e `WEBVIEW2_USER_DATA_FOLDER` temporário.
+
+| Cenário | Resultado |
+|---|---|
+| Abrir app / UI (SQLite local) | OK — "Meus projetos", 4 projetos no estado inicial |
+| Bundle carregado | OK — `http://tauri.localhost/assets/index-B8HL4cME.js` (o do gate) |
+| CSP real de release | OK — `script-src 'self'` + 3 hashes, sem `unsafe-inline`/`unsafe-eval`; `font-src 'self' data:`; `connect-src 'self' ipc: ipc.localhost` |
+| Script inline via DOM | OK — bloqueado (flag 0) |
+| `invoke('app_ready')` | OK |
+| **ITEM 5 — criar projeto via UI** | OK — URL virou `http://tauri.localhost/#/design/9b6b8bc9-…` (hash), app renderizou (159.344 chars) |
+| **ITEM 5 — reload dentro de `/design/<id>`** | ✅ **CORRIGIDO** — após `location.reload()` a URL segue `#/design/<id>`, o app renderiza (159.327 chars) com o editor completo ("Projeto sem título", "LinkedIn Quadrado", "Exportar", "Salvamento automático"), **sem tela em branco e sem `SyntaxError`**. O bug do build `083EFD65…` não se reproduz. |
+| **ITEM 5 — persistência** | OK — voltando ao `#/`, a lista mostra "5 projetos" (4 + 1 criado) |
+| **ITEM 6 — `pick_save_path`** | OK — devolveu `{path: "...qa-oneshot-png.png", nonce: "exp-24296-1-…"}` |
+| **ITEM 6 — uso válido do nonce** | OK — gravou 68 bytes no caminho exato emitido |
+| **ITEM 6 — reuso do mesmo nonce** | OK — rejeitado: `nonce de export inválido ou já usado` (consume único) |
+| **ITEM 6 — destino divergente** | OK — rejeitado: `nonce de export não corresponde ao caminho escolhido` |
+| **ITEM 6 — `destination` sem nonce** | OK — rejeitado: `destino escolhido exige nonce one-shot de pick_save_path` |
+| **ITEM 6 — nonce inválido** | OK — rejeitado: `nonce de export inválido ou já usado` |
+| **ITEM 6 — fallback sem `destination`** | OK — gravou em `%APPDATA%\com.opendesign.app\exports\qa-fallback.png` (8 bytes) |
+| Validação de extensão | OK — `kind: 'png'` impõe `.png` via `set_file_name` (`commands.rs:365`); a checagem em `:380-388` atua sobre o caminho final. Nota: um teste inicial com `filename: 'qa.exe'` pareceu "aceitar", mas era falso positivo do teste — o nome virou `qa-exe.png`. |
+| Exceções / erros de console | Zero (`exceptions: []`, `logErrors: []`, `consoleErrs: []`) |
+
+Arquivos PNG criados pelo smoke removidos (`qa-*.png` em `OpenDesign/` e no
+`exports`). Item 6 do checklist totalmente coberto, incluindo o one-shot real.
+**CSP, bundle, nonce e os itens 5 e 6 verdes no artefato final.** Relatório ao
+Hugo enviado (`m-mwpg4jck-578-XE1_Otda9uW0`, `delivered`).
+
+**Bloqueio remanescente — instaladores MSI/NSIS:** `.github/workflows/tauri.yml`
+segue em rascunho (15:37:45, 6.949 bytes), sem as etapas obrigatórias
+(`pnpm test` → build cru → gate `-FullAssetSet` → bundle reaproveitando o mesmo
+exe com `--no-binary-patching --no-sign` → repetir gate antes do
+`releaseDraft`). `gh` CLI não instalado, sem token+endpoint de run. Nada
+baixado ou executado. Aguardando dono do workflow + run + credenciais.
+
+#### Revisão do workflow reescrito pela coordenação (pedido de parecer, 20/11)
+
+Hugo reescreveu `.github/workflows/tauri.yml` (9.075 bytes, **M** no git, nada
+publicado) e pediu revisão antes de qualquer commit. **PAREcer: CORRETO**, com
+recomendações de endurecimento (nenhuma blocker).
+
+Conferido em disco / na CLI local:
+
+- Sequência na ordem exigida: `pnpm install --frozen-lockfile` → `pnpm test` →
+  geração do `ci-build.json` → `pnpm tauri build --no-bundle --config
+  src-tauri/ci-build.json` → gate 1 (`-FullAssetSet`, SHA em
+  `steps.gate1.outputs.exe_sha`) → `pnpm tauri bundle --bundles msi nsis
+  --config src-tauri/ci-build.json --no-binary-patching --no-sign` → gate 2
+  (mesmo script + comparação de SHA) → upload de `app.exe` + MSI + NSIS →
+  `gh release create --draft` **somente** com `if: github.event_name == 'push'`
+  (gatilho `push` sóacede tags `v*`; `workflow_dispatch` não cria release).
+- `tauri-action` removido — não há mais build+bundle numa única chamada.
+- Config de CI gerado por **cópia completa** do `tauri.conf.json` canônico com
+  `bundle.active:true`/`targets:['msi','nsis']` — preserva
+  `build.beforeBuildCommand: pnpm build`, `frontendDist: ../dist` e a CSP. O
+  config canônico continua INTACTO (`active:false`, `targets:"all"`).
+- `pnpm tauri bundle --help` (executado localmente, sem build): confirma
+  `--no-sign` ("Skip code signing"), `--no-binary-patching` ("Skip patching the
+  main executable… preserves an already-signed binary") e `--bundles msi nsis`
+  como valores válidos. Também confirma que o bundle roda apenas
+  `beforeBundleCommand` — ausente na config —, então o frontend **não** é
+  reconstruído e o exe gateado é reaproveitado.
+- Gate usa `pwsh -NoProfile -File` com `$LASTEXITCODE`: compatível com o
+  PowerShell 7 do `windows-latest` (o script só usa APIs .NET padrão;
+  `Encoding.GetEncoding(28591)` e `Get-ChildItem -File -Recurse` funcionam no
+  .NET Core). Fail-closed mantido.
+
+Recomendações (não bloqueiam o commit):
+
+1. `GITHUB_OUTPUT`: trocar `"exe_sha=$sha" | Out-File -Encoding utf8 -Append`
+   por `Add-Content`/`[IO.File]::AppendAllText(..., "exe_sha=$sha\`n")` para
+   eliminar risco de BOM/CRLF em versões antigas do pwsh (no 7 atual é seguro).
+2. Gate 2: usar comparação case-sensitive (`-ceq`) ou `.ToUpperInvariant()`
+   nos dois lados. Hoje ambos vêm de `Get-FileHash` (uppercase), então `-ne`
+   funciona, mas `-ceq` é mais explícito.
+3. `--ci` explícito no comando de bundle (o Actions já define `CI=true`, então
+   está implícito).
+
+Risco de execução (fora do arquivo): geração do MSI depende do WiX Toolset no
+`windows-latest`. O `pnpm tauri info` de diagnóstico está presente com
+`continue-on-error: true`; confirmar no primeiro run.
+
+**Critério de SHA reafirmado ao Hugo (conforme alerta dele):** divergência entre
+o exe local (`3D56E6F3…B9D`) e o exe do CI **não é falha** — diferença de
+ambiente de build é esperada. Os critérios são: gate 1 = exe↔dist do **mesmo
+run**; gate 2 = exe pós-bundle == exe gateado **desse run**; item 8 (executado
+localmente por Douglas) = exe extraído do instalador == exe gateado **desse
+run**. Nenhum desses critérios usa o exe local como referência. Nenhum
+commit/push/tag/release feito. Parecer enviado ao Hugo
+(`m-mwpgatcq-580-PfL5Wf8ZEkAk`, `delivered`).
