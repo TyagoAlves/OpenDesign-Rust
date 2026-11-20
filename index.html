@@ -238,12 +238,16 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
         <p class="lede">Crie posts, carrosséis e gráficos profissionais com um editor que roda inteiro na sua máquina. Sem assinatura, sem nuvem, sem instalar Node nem dependências.</p>
         <div class="cta-row">
           <a class="btn btn--primary" id="download" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
+          <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Instalador NSIS <span aria-hidden="true">↓</span></a>
+          <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="cta-row" style="margin-top:12px">
           <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">Ver o código <span aria-hidden="true">↗</span></a>
         </div>
         <div class="meta">
           <span><i class="dot"></i> 13,3 MB</span>
           <span><i class="dot"></i> Windows</span>
-          <span><i class="dot dot--warn"></i> Binário em validação</span>
+          <span><i class="dot"></i> Release aprovada</span>
         </div>
       </div>
       <div class="mock" aria-label="Prévia ilustrativa do editor OpenDesign">
@@ -351,6 +355,12 @@ conta / nuvem         <b>← inexistente</b></div>
       </div>
       <div class="code" id="hash">D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74</div>
       <p style="color:var(--muted);font-size:14px;max-width:760px">O frontend embutido é <code style="font:12px var(--mono)">/assets/index-BCxGHaIP.js</code>, exatamente o mesmo do <code style="font:12px var(--mono)">dist/</code> gerado no build <code>88f36d9</code> (78/78 assets). O gate aprovou o exe e confirmou que MSI e NSIS não o reescreveram. O procedimento está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#verificar-o-binário" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a> e o relatório completo em <a href="https://github.com/TyagoAlves/OpenDesign-Rust/blob/main/docs/qa-golive-desktop.md" target="_blank" rel="noopener" style="color:var(--accent-ink)">docs/qa-golive-desktop.md ↗</a>.</p>
+      <p style="color:var(--muted);font-size:13px;max-width:760px;margin-top:18px"><b>Instaladores — contêm o mesmo exe gateado:</b></p>
+      <div class="code">OpenDesign_1.0.0_x64-setup.exe  (NSIS)  4.983.351 bytes
+SHA-256 FCD3949E3313484F311C56416EB31F752BF60053662CA805ADE7838F658EF1DD
+
+OpenDesign_1.0.0_x64_en-US.msi  (MSI)  6.295.552 bytes
+SHA-256 3DA0A28ABCADCA7D7200D03B577891AF8046DE0FE7AC27B5DADFB5F1F25268BB</div>
     </div>
   </section>
 
@@ -361,6 +371,7 @@ conta / nuvem         <b>← inexistente</b></div>
         <details><summary>O OpenDesign é realmente gratuito?</summary><p>Sim. O projeto é open-source sob licença MIT. Não há assinatura, plano pago ou marca d'água. O binário desktop é distribuído sem custo.</p></details>
         <details><summary>Preciso instalar algo para usar o .exe?</summary><p>Não. O executável embute o frontend e a camada desktop. Não é necessário ter Node.js, pnpm, wrangler ou um banco externo instalado.</p></details>
         <details><summary>Como sei que este binário passou no QA?</summary><p>O gate conferiu que o frontend embutido rastreia o <code>dist/</code> do mesmo build (78/78 assets), que o exe não foi reescrito pelo bundle e que o exe extraído do MSI e do NSIS tem o mesmo SHA. Smoke com CSP de release, reload e desinstalação limpa também passaram. O go-live foi aprovado pelo Tyago.</p></details>
+        <details><summary>Qual a diferença entre o .exe, o NSIS e o MSI?</summary><p><b>.exe</b>: portátil, sem instalação — basta executar. <b>NSIS</b>: instalador com atalhos e desinstalação limpa, a opção recomendada. <b>MSI</b>: instalador alternativo para implantação corporativa; no QA foi validado por extração administrativa. Os três embutem o mesmo binário gateado.</p></details>
         <details><summary>Onde meus projetos são salvos?</summary><p>Em um arquivo SQLite na pasta de dados do aplicativo no Windows: <code>%APPDATA%\com.opendesign.app\opendesign.db</code>. Nada é enviado para servidores.</p></details>
         <details><summary>Dá para usar os arquivos comercialmente?</summary><p>O código é MIT. Você pode usar o editor, adaptá-lo e distribuir seu trabalho. A marca OpenDesign e os logos permanecem com seus respectivos donos.</p></details>
         <details><summary>Esta página é independente?</summary><p>Sim. É uma landing do fork <code>TyagoAlves/OpenDesign-Rust</code>. Identidade, textos e assets são do próprio projeto OpenDesign; não há vínculo com projetos de terceiros.</p></details>
@@ -373,7 +384,11 @@ conta / nuvem         <b>← inexistente</b></div>
       <span class="eyebrow">Código aberto · execução local</span>
       <h2>Faça design sem depender de ninguém.</h2>
       <p>Baixe o binário aprovado, explore o editor e acompanhe o projeto. O QA dos instaladores fechou verde e o go-live tem o OK do Tyago.</p>
-      <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
+      <div class="cta-row" style="justify-content:center;margin-top:20px">
+        <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
+        <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Instalador NSIS <span aria-hidden="true">↓</span></a>
+        <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI <span aria-hidden="true">↓</span></a>
+      </div>
       <p class="final__note">Release aprovada · QA verde · código aberto sob MIT</p>
     </div>
   </section>
