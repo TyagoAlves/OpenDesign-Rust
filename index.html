@@ -39,7 +39,7 @@
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:linear-gradient(rgba(251,251,251,.84),rgba(251,251,251,.90)),url('assets/background.jpg') center center/cover fixed no-repeat,var(--canvas);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.55}
+body{margin:0;background:linear-gradient(rgba(251,251,251,.84),rgba(251,251,251,.90)),var(--canvas);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.55}
 a{color:inherit}
 /* Foco visível: 3px e contraste alto sobre fundo claro, imagem ou véu */
 :focus-visible{outline:3px solid #102A43;outline-offset:3px;box-shadow:0 0 0 5px rgba(255,255,255,.9)}
@@ -190,14 +190,15 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
   .band{padding:26px}
   .notice__inner{font-size:12px}
 }
-/* Parallax: camadas decorativas fora do fluxo; nunca cobrem nav, CTA ou aviso */
-.hero{position:relative;overflow:hidden}
-.hero__grid{position:relative;z-index:1}
-.px-layer{position:absolute;pointer-events:none;z-index:0;will-change:transform;user-select:none}
-.px-layer--l0{top:-12%;left:-6%;width:52%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(245,57,30,.10),rgba(245,57,30,0) 68%);filter:blur(2px)}
-.px-layer--l1{right:-8%;bottom:-18%;width:44%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(38,37,30,.10),rgba(38,37,30,0) 70%)}
-@media (max-width:640px), (pointer:coarse), (orientation:landscape) and (max-height:480px){.px-layer{display:none}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}.px-layer{transform:none!important}}
+/* Parallax em camadas: decorativo, fora do fluxo; nunca cobre nav, CTA ou aviso */
+.hero{position:relative;overflow:hidden;isolation:isolate;background:#d9eaf4}
+.hero__grid{position:relative;z-index:2}
+.hero-parallax,.hero__veil{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;user-select:none}
+.hero-parallax img{position:absolute;left:0;top:-10%;width:100%;height:120%;object-fit:cover;object-position:center bottom}
+.hero-parallax img:nth-child(-n+2){will-change:transform}
+.hero__veil{background:linear-gradient(90deg,rgba(251,251,251,.78),rgba(251,251,251,.46) 46%,rgba(251,251,251,.18)),linear-gradient(180deg,rgba(251,251,251,.28),rgba(251,251,251,.55))}
+@media (max-width:640px), (pointer:coarse), (orientation:landscape) and (max-height:480px){.hero-parallax img:nth-child(-n+2){will-change:auto}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}.hero-parallax img{transform:none!important}}
 </style>
 </head>
 <body>
@@ -229,8 +230,14 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
 
 <main id="topo" tabindex="-1">
   <section class="hero">
-    <div class="px-layer px-layer--l0" data-parallax="0.06" aria-hidden="true"></div>
-    <div class="px-layer px-layer--l1" data-parallax="0.04" aria-hidden="true"></div>
+    <div class="hero-parallax" aria-hidden="true">
+      <img class="parallax-layer" data-speed="0.1" src="assets/parallax/ceu.webp" alt="" width="1600" height="773">
+      <img class="parallax-layer" data-speed="0.25" src="assets/parallax/camada1.webp" alt="" width="1600" height="773">
+      <img class="parallax-layer" data-speed="0.45" src="assets/parallax/camada2.webp" alt="" width="1600" height="773">
+      <img class="parallax-layer" data-speed="0.7" src="assets/parallax/camada3.webp" alt="" width="1600" height="773">
+      <img class="parallax-layer" data-speed="1" src="assets/parallax/camada4.webp" alt="" width="1600" height="773">
+    </div>
+    <div class="hero__veil" aria-hidden="true"></div>
     <div class="wrap hero__grid">
       <div>
         <span class="eyebrow">Open source · Windows · Gratuito</span>
