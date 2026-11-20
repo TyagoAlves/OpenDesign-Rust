@@ -10,11 +10,15 @@ OpenDesign é um editor de design gráfico open-source para Windows. Roda localm
 
 ## Baixar o `.exe`
 
-[**Baixar OpenDesign.exe ↓**](https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe)
+| Download | Tipo | Tamanho | SHA-256 |
+|---|---|---|---|
+| [**OpenDesign.exe ↓**](https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe) | Executável portátil | 13.946.880 bytes | `D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74` |
+| [**Instalador NSIS ↓**](https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe) | Instala com atalhos e desinstalação limpa (recomendado) | 4.983.351 bytes | `FCD3949E3313484F311C56416EB31F752BF60053662CA805ADE7838F658EF1DD` |
+| [**Instalador MSI ↓**](https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi) | Alternativa para implantação corporativa | 6.295.552 bytes | `3DA0A28ABCADCA7D7200D03B577891AF8046DE0FE7AC27B5DADFB5F1F25268BB` |
 
-Não precisa instalar Node, pnpm, wrangler nem dependências. Requer Windows com **WebView2** (presente no Windows 11; pode ser necessário instalar o runtime em versões antigas do Windows 10).
+Os três embutem o mesmo exe gateado — conferido no item 8 do QA. Não precisa instalar Node, pnpm, wrangler nem dependências. Requer Windows com **WebView2** (presente no Windows 11; pode ser necessário instalar o runtime em versões antigas do Windows 10).
 
-1. Baixe o `.exe` e dê dois cliques.
+1. Baixe o `.exe` e dê dois cliques, ou execute um dos instaladores.
 2. Crie um projeto, edite e exporte em PNG (esta página ou todas) ou PDF de carrossel.
 3. Feche e reabra: projetos, páginas, brand kits e fontes importadas continuam no SQLite local.
 
@@ -27,6 +31,8 @@ Os dados ficam em `%APPDATA%\com.opendesign.app\opendesign.db`. Nada é enviado 
 | Arquivo | `Release/OpenDesign.exe` (raw da `main`) |
 | Tamanho | 13.946.880 bytes |
 | SHA-256 | `D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74` |
+| Instalador NSIS | 4.983.351 bytes · SHA `FCD3949E3313484F311C56416EB31F752BF60053662CA805ADE7838F658EF1DD` |
+| Instalador MSI | 6.295.552 bytes · SHA `3DA0A28ABCADCA7D7200D03B577891AF8046DE0FE7AC27B5DADFB5F1F25268BB` |
 | Frontend embutido | `/assets/index-BCxGHaIP.js` (igual ao `dist/` do build `88f36d9`) |
 | Gate de rastreabilidade | **Aprovado** — 78/78 assets, leitura estável do PE |
 | QA dos instaladores | **Verde** — MSI e NSIS extraem o mesmo exe; smoke e desinstalação passaram |
@@ -35,7 +41,7 @@ O build veio do run [`44818112977`](https://github.com/TyagoAlves/OpenDesign-Rus
 
 ### Instaladores
 
-O CI gera **MSI e NSIS** em separado, reaproveitando o mesmo `.exe` já gateado (`--no-binary-patching --no-sign`). O workflow está em [`.github/workflows/tauri.yml`](.github/workflows/tauri.yml); o gatilho manual (`workflow_dispatch`) apenas produz artefatos e **não cria release**. Push de tag `v*` gera no máximo um **rascunho**, revisado antes de qualquer publicação. Até agora nenhuma tag/release foi criada. Detalhes em [`docs/tauri-ci.md`](docs/tauri-ci.md).
+O CI gera **MSI e NSIS** em separado, reaproveitando o mesmo `.exe` já gateado (`--no-binary-patching --no-sign`), e os dois instaladores estão publicados em `Release/`, com links no topo deste README e na landing. O NSIS passou por instalação silenciosa e desinstalação limpa; o MSI foi validado por extração administrativa. O workflow está em [`.github/workflows/tauri.yml`](.github/workflows/tauri.yml); o gatilho manual (`workflow_dispatch`) apenas produz artefatos e **não cria release**. Push de tag `v*` gera no máximo um **rascunho**, revisado antes de qualquer publicação. Até agora nenhuma tag/release foi criada. Detalhes em [`docs/tauri-ci.md`](docs/tauri-ci.md).
 
 ## Verificar o binário
 
