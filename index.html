@@ -132,6 +132,7 @@ h2 em{font-style:normal;color:var(--accent)}
 .band p{color:#b7bcc5;font-size:15px}
 .band .meta{color:#8f96a2}
 .code{background:#0a0c0f;border:1px solid #2b2f37;border-radius:var(--r-md);padding:16px;font:12px/1.7 var(--mono);color:#d7dce4;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+code{overflow-wrap:anywhere}
 .code b{color:var(--accent-inverse);font-weight:500}
 .copy{font:600 11px var(--font);background:#22262d;color:#d7dce4;border:1px solid #343a44;border-radius:5px;padding:6px 10px;cursor:pointer;margin-top:10px}
 .copy:hover{border-color:var(--accent-inverse)}
@@ -179,7 +180,12 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
   section{padding:60px 0}
 }
 @media(max-width:640px){
+  .nav__bar{width:100%;max-width:none;margin:0;padding:0 20px}
+  .hero__grid{grid-template-columns:minmax(0,1fr)}
+  .hero .btn{white-space:normal}
+  .hero .mock{min-width:0}
   .nav__links,.nav__rule{display:none}
+  .nav__end .btn--ghost{display:none}
   .burger{display:block}
   .nav__links.is-open{display:flex;position:absolute;top:64px;left:0;right:0;background:var(--soft);border-bottom:1px solid var(--border);flex-direction:column;align-items:flex-start;padding:18px 20px;gap:14px}
   .hero{padding:46px 0 36px}
@@ -223,8 +229,8 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
 
 <div class="notice" role="note">
   <div class="wrap notice__inner">
-    <span class="notice__tag">Go-live</span>
-    <span><b>Release aprovada.</b> O binário abaixo passou no gate de rastreabilidade e no QA final dos instaladores MSI e NSIS, com OK do Tyago. Tamanho e SHA-256 conferidos em disco.</span>
+    <span class="notice__tag">Versão 1.0.0</span>
+    <span><b>OpenDesign para Windows.</b> Executável e instaladores conferidos; tamanho e SHA-256 publicados para você verificar. Código aberto sob licença MIT.</span>
   </div>
 </div>
 
@@ -243,18 +249,18 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
         <span class="eyebrow">Open source · Windows · Gratuito</span>
         <h1>Seu estúdio de design.<br>Em um <em>.exe</em>.</h1>
         <p class="lede">Crie posts, carrosséis e gráficos profissionais com um editor que roda inteiro na sua máquina. Sem assinatura, sem nuvem, sem instalar Node nem dependências.</p>
-        <div class="cta-row">
-          <a class="btn btn--primary" id="download" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
-          <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Instalador NSIS <span aria-hidden="true">↓</span></a>
-          <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI <span aria-hidden="true">↓</span></a>
+        <div class="cta-row" id="download">
+          <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Baixar instalador Windows (NSIS) — recomendado <span aria-hidden="true">↓</span></a>
         </div>
-        <div class="cta-row" style="margin-top:12px">
-          <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">Ver o código <span aria-hidden="true">↗</span></a>
+        <div class="cta-row" style="margin-top:10px;gap:10px;align-items:center">
+          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">.exe portátil <span aria-hidden="true">↓</span></a>
+          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI <span aria-hidden="true">↓</span></a>
+          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
         </div>
         <div class="meta">
           <span><i class="dot"></i> 13,3 MB</span>
           <span><i class="dot"></i> Windows</span>
-          <span><i class="dot"></i> Release aprovada</span>
+          <span><i class="dot"></i> Versão 1.0.0</span>
         </div>
       </div>
       <div class="mock" aria-label="Prévia ilustrativa do editor OpenDesign">
@@ -271,7 +277,7 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
             <p class="mock__label">Camada</p><div class="mock__line w85"></div><div class="mock__line w45"></div>
             <p class="mock__label">Texto</p><div class="mock__line w70"></div><div class="mock__line w85"></div><div class="mock__line w45"></div>
             <p class="mock__label">Cor</p><div class="mock__swatch" style="background:#26251E"></div><div class="mock__swatch" style="background:#f5391e"></div>
-            <div class="mock__foot"><button>Exportar</button><button>Salvar</button></div>
+            <div class="mock__foot"><button aria-hidden="true" tabindex="-1">Exportar</button><button aria-hidden="true" tabindex="-1">Salvar</button></div>
           </div>
         </div>
       </div>
@@ -286,7 +292,7 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
         <p>A versão desktop empacota o editor com Tauri. Você baixa um arquivo, abre e usa — o resto acontece localmente.</p>
       </div>
       <div class="grid g3">
-        <article class="tile"><div class="tile__ico">↧</div><h3>Um clique e pronto</h3><p>Dê dois cliques no .exe. Não precisa instalar Node, pnpm, wrangler nem configurar banco.</p></article>
+        <article class="tile"><div class="tile__ico">↧</div><h3>Um clique e pronto</h3><p>Dê dois cliques no .exe. Não precisa instalar mais nada.</p></article>
         <article class="tile"><div class="tile__ico">⌂</div><h3>Seus arquivos ficam aqui</h3><p>Projetos, páginas, brand kits e fontes são salvos em SQLite local, na sua pasta de dados do Windows.</p></article>
         <article class="tile"><div class="tile__ico">✳</div><h3>Grátis e open source</h3><p>Código aberto sob MIT. Sem plano pago, sem marca d'água, sem vendor lock-in e sem conta para criar.</p></article>
       </div>
@@ -317,7 +323,7 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
     <div class="wrap">
       <figure class="shot">
         <img src="assets/readme-banner.png" alt="Prévia da interface do OpenDesign" loading="lazy">
-        <figcaption>A interface escura do editor: barras laterais, canvas e painel de propriedades.</figcaption>
+        <figcaption>O editor OpenDesign em tema claro, com menus em inglês: barras laterais, canvas e painel de propriedades.</figcaption>
       </figure>
     </div>
   </section>
@@ -335,9 +341,8 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
 └── opendesign.db   <b>← seus projetos</b>
 
 frontend embutido no .exe
-backend Hono/wrangler <b>← não usado</b>
+backend web <b>← não usado</b>
 conta / nuvem         <b>← inexistente</b></div>
-        <button class="copy" id="copyhash">Copiar SHA-256 do binário</button>
       </div>
     </div>
   </section>
@@ -361,8 +366,10 @@ conta / nuvem         <b>← inexistente</b></div>
         <p>O binário publicado tem 13.946.880 bytes e este SHA-256, conferidos em disco:</p>
       </div>
       <div class="code" id="hash">D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74</div>
-      <p style="color:var(--muted);font-size:14px;max-width:760px">O frontend embutido é <code style="font:12px var(--mono)">/assets/index-BCxGHaIP.js</code>, exatamente o mesmo do <code style="font:12px var(--mono)">dist/</code> gerado no build <code>88f36d9</code> (78/78 assets). O gate aprovou o exe e confirmou que MSI e NSIS não o reescreveram. O procedimento está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#verificar-o-binário" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a> e o relatório completo em <a href="https://github.com/TyagoAlves/OpenDesign-Rust/blob/main/docs/qa-golive-desktop.md" target="_blank" rel="noopener" style="color:var(--accent-ink)">docs/qa-golive-desktop.md ↗</a>.</p>
-      <p style="color:var(--muted);font-size:13px;max-width:760px;margin-top:18px"><b>Instaladores — contêm o mesmo exe gateado:</b></p>
+      <button class="copy" id="copyhash">Copiar SHA-256 do binário</button>
+      <p style="color:var(--muted);font-size:13px;max-width:760px;margin:8px 0 0"><b>Windows SmartScreen:</b> por ser open-source (exe/msi sem assinatura paga), o Windows pode exibir aviso; confira o SHA-256 antes de executar (ex.: <code style="font:12px var(--mono)">Get-FileHash .\OpenDesign.exe -Algorithm SHA256</code>).</p>
+      <p style="color:var(--muted);font-size:14px;max-width:760px">Os pacotes MSI e NSIS contêm o mesmo executável publicado acima. Para conferir, calcule o SHA-256 do arquivo baixado e compare com o valor mostrado. O procedimento está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#verificar-o-binário" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a> e o relatório completo em <a href="https://github.com/TyagoAlves/OpenDesign-Rust/blob/main/docs/qa-golive-desktop.md" target="_blank" rel="noopener" style="color:var(--accent-ink)">docs/qa-golive-desktop.md ↗</a>.</p>
+      <p style="color:var(--muted);font-size:13px;max-width:760px;margin-top:18px"><b>Instaladores — contêm o mesmo executável:</b></p>
       <div class="code">OpenDesign_1.0.0_x64-setup.exe  (NSIS)  4.983.351 bytes
 SHA-256 FCD3949E3313484F311C56416EB31F752BF60053662CA805ADE7838F658EF1DD
 
@@ -376,9 +383,9 @@ SHA-256 3DA0A28ABCADCA7D7200D03B577891AF8046DE0FE7AC27B5DADFB5F1F25268BB</div>
       <div class="sec-head"><span class="eyebrow">Perguntas frequentes</span><h2>Antes de baixar.</h2></div>
       <div class="faq">
         <details><summary>O OpenDesign é realmente gratuito?</summary><p>Sim. O projeto é open-source sob licença MIT. Não há assinatura, plano pago ou marca d'água. O binário desktop é distribuído sem custo.</p></details>
-        <details><summary>Preciso instalar algo para usar o .exe?</summary><p>Não. O executável embute o frontend e a camada desktop. Não é necessário ter Node.js, pnpm, wrangler ou um banco externo instalado.</p></details>
-        <details><summary>Como sei que este binário passou no QA?</summary><p>O gate conferiu que o frontend embutido rastreia o <code>dist/</code> do mesmo build (78/78 assets), que o exe não foi reescrito pelo bundle e que o exe extraído do MSI e do NSIS tem o mesmo SHA. Smoke com CSP de release, reload e desinstalação limpa também passaram. O go-live foi aprovado pelo Tyago.</p></details>
-        <details><summary>Qual a diferença entre o .exe, o NSIS e o MSI?</summary><p><b>.exe</b>: portátil, sem instalação — basta executar. <b>NSIS</b>: instalador com atalhos e desinstalação limpa, a opção recomendada. <b>MSI</b>: instalador alternativo para implantação corporativa; no QA foi validado por extração administrativa. Os três embutem o mesmo binário gateado.</p></details>
+        <details><summary>Preciso instalar algo para usar o .exe?</summary><p>Não. O executável já traz o editor e tudo o que ele precisa. Não é preciso instalar Node.js, pnpm ou um banco externo.</p></details>
+        <details><summary>Como sei que este executável passou na verificação?</summary><p>Publicamos o tamanho e o SHA-256 para você conferir. O executável extraído do MSI e do NSIS tem o mesmo SHA-256. Você também pode instalar, reiniciar e desinstalar o aplicativo.</p></details>
+        <details><summary>Qual a diferença entre o .exe, o NSIS e o MSI?</summary><p><b>.exe</b>: portátil, sem instalação — basta executar. <b>NSIS</b>: instalador com atalhos e desinstalação limpa, a opção recomendada. <b>MSI</b>: instalador alternativo para implantação corporativa; o executável foi extraído do pacote e comparado ao original. Os três contêm o mesmo executável.</p></details>
         <details><summary>Onde meus projetos são salvos?</summary><p>Em um arquivo SQLite na pasta de dados do aplicativo no Windows: <code>%APPDATA%\com.opendesign.app\opendesign.db</code>. Nada é enviado para servidores.</p></details>
         <details><summary>Dá para usar os arquivos comercialmente?</summary><p>O código é MIT. Você pode usar o editor, adaptá-lo e distribuir seu trabalho. A marca OpenDesign e os logos permanecem com seus respectivos donos.</p></details>
         <details><summary>Esta página é independente?</summary><p>Sim. É uma landing do fork <code>TyagoAlves/OpenDesign-Rust</code>. Identidade, textos e assets são do próprio projeto OpenDesign; não há vínculo com projetos de terceiros.</p></details>
@@ -390,13 +397,13 @@ SHA-256 3DA0A28ABCADCA7D7200D03B577891AF8046DE0FE7AC27B5DADFB5F1F25268BB</div>
     <div class="wrap">
       <span class="eyebrow">Código aberto · execução local</span>
       <h2>Faça design sem depender de ninguém.</h2>
-      <p>Baixe o binário aprovado, explore o editor e acompanhe o projeto. O QA dos instaladores fechou verde e o go-live tem o OK do Tyago.</p>
+      <p>Baixe o OpenDesign para Windows, explore o editor e acompanhe o projeto. Versão 1.0.0, código aberto sob MIT, com SHA-256 publicado para conferência.</p>
       <div class="cta-row" style="justify-content:center;margin-top:20px">
         <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
         <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Instalador NSIS <span aria-hidden="true">↓</span></a>
         <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI <span aria-hidden="true">↓</span></a>
       </div>
-      <p class="final__note">Release aprovada · QA verde · código aberto sob MIT</p>
+      <p class="final__note">Versão 1.0.0 · SHA-256 verificável · código aberto sob MIT</p>
     </div>
   </section>
 </main>
