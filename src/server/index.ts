@@ -108,14 +108,14 @@ const getDesign = createRoute({
   request: { params: z.object({ id: z.string() }) },
   responses: {
     200: { content: { "application/json": { schema: DesignWithPagesSchema } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
 app.openapi(getDesign, async (c) => {
   const { id } = c.req.valid("param");
   const row = await get<z.infer<typeof DesignSchema>>("SELECT * FROM designs WHERE id = ?", [id]);
-  if (!row) return c.json({ error: "Not found" }, 404);
+  if (!row) return c.json({ error: "Não encontrado" }, 404);
   const pages = await query<z.infer<typeof PageSchema>>(
     "SELECT * FROM pages WHERE design_id = ? ORDER BY sort_order",
     [id]
@@ -185,7 +185,7 @@ const updateDesign = createRoute({
   },
   responses: {
     200: { content: { "application/json": { schema: DesignSchema } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
@@ -193,7 +193,7 @@ app.openapi(updateDesign, async (c) => {
   const { id } = c.req.valid("param");
   const body = c.req.valid("json");
   const existing = await get<z.infer<typeof DesignSchema>>("SELECT * FROM designs WHERE id = ?", [id]);
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing) return c.json({ error: "Não encontrado" }, 404);
 
   await run(
     `UPDATE designs SET name = ?, canvas_json = ?, width = ?, height = ?, thumbnail_url = ?, updated_at = datetime('now') WHERE id = ?`,
@@ -241,14 +241,14 @@ const listFields = createRoute({
   request: { params: z.object({ id: z.string() }) },
   responses: {
     200: { content: { "application/json": { schema: z.array(FieldSchema) } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
 app.openapi(listFields, async (c) => {
   const { id } = c.req.valid("param");
   const design = await get<{ id: string }>("SELECT id FROM designs WHERE id = ?", [id]);
-  if (!design) return c.json({ error: "Not found" }, 404);
+  if (!design) return c.json({ error: "Não encontrado" }, 404);
   const pages = await query<z.infer<typeof PageSchema>>(
     "SELECT * FROM pages WHERE design_id = ? ORDER BY sort_order",
     [id]
@@ -292,7 +292,7 @@ const fillDesign = createRoute({
   },
   responses: {
     200: { content: { "application/json": { schema: FillResponseSchema } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
@@ -301,7 +301,7 @@ app.openapi(fillDesign, async (c) => {
   const { values, save, name } = c.req.valid("json");
 
   const design = await get<z.infer<typeof DesignSchema>>("SELECT * FROM designs WHERE id = ?", [id]);
-  if (!design) return c.json({ error: "Not found" }, 404);
+  if (!design) return c.json({ error: "Não encontrado" }, 404);
 
   const pages = await query<z.infer<typeof PageSchema>>(
     "SELECT * FROM pages WHERE design_id = ? ORDER BY sort_order",
@@ -417,14 +417,14 @@ const duplicatePage = createRoute({
   request: { params: z.object({ pageId: z.string() }) },
   responses: {
     200: { content: { "application/json": { schema: PageSchema } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
 app.openapi(duplicatePage, async (c) => {
   const { pageId } = c.req.valid("param");
   const original = await get<z.infer<typeof PageSchema>>("SELECT * FROM pages WHERE id = ?", [pageId]);
-  if (!original) return c.json({ error: "Not found" }, 404);
+  if (!original) return c.json({ error: "Não encontrado" }, 404);
   // Shift sort_order of pages after the original
   await run(
     "UPDATE pages SET sort_order = sort_order + 1 WHERE design_id = ? AND sort_order > ?",
@@ -458,7 +458,7 @@ const updatePage = createRoute({
   },
   responses: {
     200: { content: { "application/json": { schema: PageSchema } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
@@ -466,7 +466,7 @@ app.openapi(updatePage, async (c) => {
   const { pageId } = c.req.valid("param");
   const body = c.req.valid("json");
   const existing = await get<z.infer<typeof PageSchema>>("SELECT * FROM pages WHERE id = ?", [pageId]);
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing) return c.json({ error: "Não encontrado" }, 404);
   await run(
     "UPDATE pages SET title = ?, canvas_json = ? WHERE id = ?",
     [body.title ?? existing.title, body.canvas_json ?? existing.canvas_json, pageId]
@@ -483,7 +483,7 @@ const deletePage = createRoute({
   request: { params: z.object({ pageId: z.string() }) },
   responses: {
     200: { content: { "application/json": { schema: z.object({ ok: z.boolean() }) } }, description: "OK" },
-    400: { content: { "application/json": { schema: ErrorSchema } }, description: "Cannot delete last page" },
+    400: { content: { "application/json": { schema: ErrorSchema } }, description: "Não é possível excluir a última página" },
   },
 });
 
@@ -492,7 +492,7 @@ app.openapi(deletePage, async (c) => {
   const page = await get<z.infer<typeof PageSchema>>("SELECT * FROM pages WHERE id = ?", [pageId]);
   if (!page) return c.json({ ok: true }, 200);
   const count = await get<{ c: number }>("SELECT COUNT(*) as c FROM pages WHERE design_id = ?", [page.design_id]);
-  if ((count?.c ?? 0) <= 1) return c.json({ error: "Cannot delete the last page" }, 400);
+  if ((count?.c ?? 0) <= 1) return c.json({ error: "Não é possível excluir a última página" }, 400);
   await run("DELETE FROM pages WHERE id = ?", [pageId]);
   return c.json({ ok: true }, 200);
 });
@@ -518,14 +518,14 @@ const getTemplate = createRoute({
   request: { params: z.object({ id: z.string() }) },
   responses: {
     200: { content: { "application/json": { schema: TemplateSchema } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
 app.openapi(getTemplate, async (c) => {
   const { id } = c.req.valid("param");
   const row = await get<z.infer<typeof TemplateSchema>>("SELECT * FROM templates WHERE id = ?", [id]);
-  if (!row) return c.json({ error: "Not found" }, 404);
+  if (!row) return c.json({ error: "Não encontrado" }, 404);
   return c.json(row, 200);
 });
 
@@ -620,7 +620,7 @@ const updateBrandKit = createRoute({
   },
   responses: {
     200: { content: { "application/json": { schema: BrandKitSchema } }, description: "OK" },
-    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Not found" },
+    404: { content: { "application/json": { schema: ErrorSchema } }, description: "Não encontrado" },
   },
 });
 
@@ -628,7 +628,7 @@ app.openapi(updateBrandKit, async (c) => {
   const { id } = c.req.valid("param");
   const b = c.req.valid("json");
   const existing = await get<BrandKitRow>("SELECT * FROM brand_kits WHERE id = ?", [id]);
-  if (!existing) return c.json({ error: "Not found" }, 404);
+  if (!existing) return c.json({ error: "Não encontrado" }, 404);
   await run(
     `UPDATE brand_kits SET name = ?, colors = ?, heading_font = ?, body_font = ?, logos = ?, updated_at = datetime('now') WHERE id = ?`,
     [
@@ -663,11 +663,11 @@ app.get("/api/fonts", async (c) => c.json(await listFonts(c.env.UPLOADS)));
 
 app.post("/api/fonts", bodyLimit({
   maxSize: 10 * 1024 * 1024 + 64 * 1024,
-  onError: (c) => c.json({ error: "Fonts must be at most 10 MB." }, 413),
+  onError: (c) => c.json({ error: "Fontes devem ter no máximo 10 MB." }, 413),
 }), async (c) => {
   const body = await c.req.parseBody();
   const file = body["file"];
-  if (!(file instanceof File)) return c.json({ error: "No font file provided" }, 400);
+  if (!(file instanceof File)) return c.json({ error: "Nenhum arquivo de fonte enviado" }, 400);
   try {
     return c.json(await storeFont(c.env.UPLOADS, file), 200);
   } catch (error) {
@@ -680,13 +680,13 @@ app.post("/api/uploads", async (c) => {
   const body = await c.req.parseBody();
   const file = body["file"];
   if (!file || typeof file === "string") {
-    return c.json({ error: "No file provided" }, 400);
+    return c.json({ error: "Nenhum arquivo enviado" }, 400);
   }
 
   const ext = file.name?.split(".").pop()?.toLowerCase() || "png";
   const allowed = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg"]);
   if (!allowed.has(ext)) {
-    return c.json({ error: "Unsupported file type" }, 400);
+    return c.json({ error: "Tipo de arquivo não suportado" }, 400);
   }
 
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -700,7 +700,7 @@ app.post("/api/uploads", async (c) => {
 app.get("/api/uploads/:filename", async (c) => {
   const { filename } = c.req.param();
   const result = await getUpload(filename);
-  if (!result) return c.json({ error: "Not found" }, 404);
+  if (!result) return c.json({ error: "Não encontrado" }, 404);
 
   return new Response(result.data, {
     headers: {

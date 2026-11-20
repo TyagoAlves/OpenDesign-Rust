@@ -23,16 +23,16 @@ export function FontPicker({ value, onChange, label }: {
     <label class="text-[11px] text-zinc-400 mb-1 block">{label}</label>
     <button
       type="button"
-      aria-label={`${label}: ${fonts.find((font) => font.family === value)?.name ?? `${value} (unavailable)`}`}
+      aria-label={`${label}: ${fonts.find((font) => font.family === value)?.name ?? `${value} (indisponível)`}`}
       aria-expanded={open}
       aria-controls={id}
       class="w-full flex items-center justify-between bg-white border border-zinc-300 rounded-md text-xs text-zinc-700 px-2 py-1.5 outline-none cursor-pointer focus:border-accent"
       onClick={() => setOpen(!open)}
     >
-      <span style={{ fontFamily: value }}>{fonts.find((font) => font.family === value)?.name ?? `${value} (unavailable)`}</span>
+      <span style={{ fontFamily: value }}>{fonts.find((font) => font.family === value)?.name ?? `${value} (indisponível)`}</span>
       {open ? <ChevronUp size={14} class="text-zinc-400" /> : <ChevronDown size={14} class="text-zinc-400" />}
     </button>
-    {open && <div id={id} role="group" aria-label="Available fonts" class="mt-1 max-h-56 overflow-y-auto bg-white border border-zinc-200 rounded-md shadow-lg p-1">
+    {open && <div id={id} role="group" aria-label="Fontes disponíveis" class="mt-1 max-h-56 overflow-y-auto bg-white border border-zinc-200 rounded-md shadow-lg p-1">
       {fonts.map((font) => (
         <button
           key={font.family}
@@ -51,13 +51,13 @@ export function FontPicker({ value, onChange, label }: {
       disabled={busy}
       class="mt-1 text-[11px] text-accent bg-transparent border-none cursor-pointer disabled:opacity-50"
       onClick={() => input.current?.click()}
-    >{busy ? "Importing…" : "Import font from computer…"}</button>
+    >{busy ? "Importando…" : "Importar fonte do computador…"}</button>
     <input
       ref={input}
       type="file"
       accept=".ttf,.otf,.woff,.woff2"
       class="hidden"
-      aria-label={`Import ${label.toLowerCase()}`}
+      aria-label={`Importar ${label.toLowerCase()}`}
       onChange={async (e) => {
         const file = e.currentTarget.files?.[0];
         e.currentTarget.value = "";
@@ -67,7 +67,7 @@ export function FontPicker({ value, onChange, label }: {
         try {
           onChange(await importFont(file));
         } catch (error) {
-          setError(error instanceof Error ? error.message : "Could not import the font.");
+          setError(error instanceof Error ? error.message : "Não foi possível importar a fonte.");
         } finally {
           setBusy(false);
         }

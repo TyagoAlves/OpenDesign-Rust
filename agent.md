@@ -1,46 +1,46 @@
 # OpenDesign
 
-A design editor for creating professional social media graphics, especially LinkedIn posts.
+Um editor de design para criar gráficos profissionais para redes sociais, especialmente posts do LinkedIn.
 
-## Features
-- Fabric.js-based canvas editor with drag-and-drop
-- Pre-built LinkedIn post templates (Quote Card, Stats Highlight, Announcement, Tips List, Profile Card, Minimal Text)
-- Text editing with Google Fonts (Inter, Montserrat, Playfair Display)
-- Brand kits — palette, heading/body fonts and logos, applied to a design in one
-  step and portable between installs as JSON (`/api/brand-kits`)
-- Image uploads and placement
-- Multiple canvas sizes (1080x1080 square, 1080x1350 carousel, 1200x627 landscape)
-- Multi-page designs exported as one PDF, which is how a LinkedIn carousel is published
-- 2x PNG export, one page or all of them
-- Save and manage multiple designs
-- Template fields — named slots you can fill from data over the API
+## Recursos
+- Editor de canvas baseado em Fabric.js com arrastar e soltar
+- Templates de posts do LinkedIn prontos (Quote Card, Stats Highlight, Announcement, Tips List, Profile Card, Minimal Text)
+- Edição de texto com Google Fonts (Inter, Montserrat, Playfair Display)
+- Brand kits — paleta, fontes de título/corpo e logos, aplicados a um design em uma
+  única etapa e portáteis entre instalações como JSON (`/api/brand-kits`)
+- Envio e posicionamento de imagens
+- Vários tamanhos de canvas (1080x1080 quadrado, 1080x1350 carrossel, 1200x627 paisagem)
+- Designs de várias páginas exportados como um único PDF, que é como um carrossel do LinkedIn é publicado
+- Exportação de PNG 2x, de uma página ou de todas
+- Salvar e gerenciar vários designs
+- Campos de template — espaços nomeados que você pode preencher a partir de dados pela API
 
-## Filling a design from data
-Objects in a design can be given a field name in the editor, which turns the
-design into a template you can drive without touching canvas JSON:
+## Preenchimento de um design a partir de dados
+Objetos em um design podem receber um nome de campo no editor, o que transforma o design em um
+template que você pode controlar sem mexer no JSON do canvas:
 
-- `GET /api/designs/{id}/fields` — what this design can be filled with. Returns
-  `name`, `type` (`text` or `image`), the current `value`, and the pages the
-  field appears on.
-- `POST /api/designs/{id}/fill` — `{"values": {"headline": "..."}}`. Returns the
-  filled pages plus `filled` and `unmatched`; the stored design is unchanged.
-  Add `"save": true` to write the result as a new design you can then open and
-  export.
+- `GET /api/designs/{id}/fields` — o que pode ser preenchido neste design. Retorna `name`,
+  `type` (`text` ou `image`), o `value` atual e as páginas em que o campo
+  aparece.
+- `POST /api/designs/{id}/fill` — `{"values": {"headline": "..."}}`. Retorna as páginas
+  preenchidas mais `filled` e `unmatched`; o design armazenado permanece inalterado. Adicione
+  `"save": true` para gravar o resultado como um novo design que você pode então abrir e
+  exportar.
 
-Prefer these over editing `canvas_json` by hand. Text fields take a string,
-image fields take a URL, and one name may cover several objects or pages.
+Prefira estes a editar `canvas_json` manualmente. Campos de texto recebem uma string, campos
+de imagem recebem uma URL, e um mesmo nome pode abranger vários objetos ou páginas.
 
-`save: true` produces an editable design, not a rendered image — there is no
-server-side renderer. Use it for a handful of variants. Do not loop it over a
-large list: every variant becomes a row that `GET /api/designs` returns in full,
-and the user ends up with gallery entries rather than finished graphics.
+`save: true` produz um design editável, não uma imagem renderizada — não há renderizador no
+servidor. Use-o para algumas poucas variantes. Não o execute em loop sobre uma lista grande:
+cada variante se torna uma linha que `GET /api/designs` retorna por completo, e o usuário acaba
+com entradas na galeria em vez de gráficos prontos.
 
-## When to use this template
-Use this template when the user wants to:
-- Create social media post images or graphics
-- Design LinkedIn posts, quote cards, or announcement banners
-- Build a LinkedIn or Instagram carousel and export it as a PDF
-- Build a simple graphic design tool
-- Create branded visual content
-- Generate on-brand variants of one design by filling it with data
-- Keep a team or client on-brand across every graphic (brand kit)
+## Quando usar este template
+Use este template quando o usuário quiser:
+- Criar imagens ou gráficos para posts de redes sociais
+- Criar posts do LinkedIn, quote cards ou banners de anúncio
+- Criar um carrossel do LinkedIn ou do Instagram e exportá-lo como PDF
+- Criar uma ferramenta simples de design gráfico
+- Criar conteúdo visual com a identidade da marca
+- Gerar variantes de um design dentro da identidade da marca preenchendo-o com dados
+- Manter uma equipe ou cliente dentro da identidade da marca em todos os gráficos (brand kit)

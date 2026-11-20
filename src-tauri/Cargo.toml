@@ -1,0 +1,30 @@
+[package]
+name = "app"
+version = "0.1.0"
+description = "OpenDesign - local design editor for social media graphics"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2024"
+rust-version = "1.90"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.6", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.12.7", features = [] }
+tauri-plugin-log = "2"
+# Banco local: "sqlite:opendesign.db" é resolvido no app_config_dir do app
+# (máquina do usuário), nunca dentro do repo do projeto.
+tauri-plugin-sql = { version = "2.6.0", features = ["sqlite"] }
+# Diálogo nativo "Salvar como" (autorizado pelo Tyago, dúvida 3/4).
+tauri-plugin-dialog = "2"

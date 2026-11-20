@@ -177,14 +177,14 @@ export function CanvasArea() {
                 <button
                   class="p-1 rounded bg-transparent border-none cursor-pointer text-zinc-400 hover:text-[#6366f1] hover:bg-[#6366f1]/10 transition-all"
                   onClick={() => addPage(page.id)}
-                  title="Add page below"
+                  title="Adicionar página abaixo"
                 >
                   <Plus size={14} />
                 </button>
                 <button
                   class="p-1 rounded bg-transparent border-none cursor-pointer text-zinc-400 hover:text-[#6366f1] hover:bg-[#6366f1]/10 transition-all"
                   onClick={() => duplicatePage(page.id)}
-                  title="Duplicate page"
+                  title="Duplicar página"
                 >
                   <Copy size={14} />
                 </button>
@@ -192,7 +192,7 @@ export function CanvasArea() {
                   <button
                     class="p-1 rounded bg-transparent border-none cursor-pointer text-zinc-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
                     onClick={() => deletePage(page.id)}
-                    title="Delete page"
+                    title="Excluir página"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -226,7 +226,7 @@ export function CanvasArea() {
               onClick={() => addPage()}
             >
               <Plus size={14} />
-              Add page
+              Adicionar página
             </button>
           </div>
         </div>

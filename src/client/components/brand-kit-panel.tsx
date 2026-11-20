@@ -22,8 +22,8 @@ export function BrandKitPanel() {
     importFont,
   } = useEditor();
 
-  // A swatch click means "make the thing I have selected this colour"; with
-  // nothing selected the only sensible target is the page background.
+  // Um clique na amostra aplica a cor ao item selecionado; sem seleção,
+  // o alvo mais sensato é o plano de fundo da página.
   const applyBrandColor = (color: string) => {
     if (selectedObject) updateSelectedObject({ fill: color });
     else setBackground("color", color);
@@ -31,14 +31,13 @@ export function BrandKitPanel() {
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
-  // Holds the label of the async operation in flight, or null. One state rather
-  // than a boolean so the indicator says which of upload / export / import is running.
+  // Guarda o rótulo da operação assíncrona em andamento, ou null.
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleLogoUpload = async (files: FileList | null) => {
     if (!files?.length || !activeBrandKit) return;
-    setBusy("Uploading…");
+    setBusy("Enviando…");
     try {
       const form = new FormData();
       form.append("file", files[0]);
@@ -48,7 +47,7 @@ export function BrandKitPanel() {
         await updateBrandKit(activeBrandKit.id, { logos: [...activeBrandKit.logos, data.url] });
       }
     } catch (e) {
-      console.error("Logo upload failed:", e);
+      console.error("Não foi possível enviar o logo:", e);
     } finally {
       setBusy(null);
     }
@@ -57,7 +56,7 @@ export function BrandKitPanel() {
   const handleExport = async () => {
     if (!activeBrandKit) return;
     setError(null);
-    setBusy("Exporting…");
+    setBusy("Exportando…");
     try {
       const { json, missing } = await exportKit(activeBrandKit, customFonts);
       const blob = new Blob([json], { type: "application/json" });
@@ -66,7 +65,7 @@ export function BrandKitPanel() {
       link.download = `${activeBrandKit.name.replace(/[^\w-]+/g, "-").toLowerCase()}.brandkit.json`;
       link.click();
       URL.revokeObjectURL(link.href);
-      if (missing > 0) setError(`Exported, but ${missing} asset(s) could not be read.`);
+      if (missing > 0) setError(`Exportado, mas não foi possível ler ${missing} arquivo(s).`);
     } finally {
       setBusy(null);
     }
@@ -75,15 +74,15 @@ export function BrandKitPanel() {
   const handleImport = async (files: FileList | null) => {
     if (!files?.length) return;
     setError(null);
-    setBusy("Importing…");
+    setBusy("Importando…");
     try {
       const result = await importKit(await files[0].text(), importFont);
       if (!result) {
-        setError("That file is not an OpenDesign brand kit.");
+        setError("Esse arquivo não é um kit de marca do OpenDesign.");
         return;
       }
       await createBrandKit(result.kit);
-      if (result.missing > 0) setError(`Imported, but ${result.missing} asset(s) could not be saved.`);
+      if (result.missing > 0) setError(`Importado, mas não foi possível salvar ${result.missing} arquivo(s).`);
     } finally {
       setBusy(null);
     }
@@ -91,15 +90,15 @@ export function BrandKitPanel() {
 
   return (
     <div class="flex flex-col gap-4">
-      {/* Kit selector */}
+      {/* Seletor de kit */}
       <div class="flex gap-1.5">
         <select
           class="flex-1 min-w-0 bg-white border border-zinc-300 rounded-md text-xs text-zinc-700 px-2 py-1.5 outline-none cursor-pointer focus:border-accent"
           value={activeBrandKitId ?? ""}
           onChange={(e) => setActiveBrandKitId((e.target as HTMLSelectElement).value || null)}
-          aria-label="Active brand kit"
+          aria-label="Kit de marca ativo"
         >
-          {brandKits.length === 0 && <option value="">No brand kit yet</option>}
+          {brandKits.length === 0 && <option value="">Nenhum kit de marca ainda</option>}
           {brandKits.map((k) => (
             <option key={k.id} value={k.id}>
               {k.name}
@@ -109,8 +108,8 @@ export function BrandKitPanel() {
         <button
           class="shrink-0 p-1.5 rounded-md border border-zinc-300 bg-white text-zinc-500 cursor-pointer hover:border-accent hover:text-accent transition-all"
           onClick={() => createBrandKit()}
-          title="New brand kit"
-          aria-label="New brand kit"
+          title="Novo kit de marca"
+          aria-label="Novo kit de marca"
         >
           <Plus size={14} />
         </button>
@@ -118,31 +117,28 @@ export function BrandKitPanel() {
 
       {!activeBrandKit ? (
         <p class="text-[11px] text-zinc-400 leading-relaxed">
-          A brand kit holds the colors, fonts and logos you reuse on every design. Create one, then
-          apply it to any design in a click.
+          Um kit de marca reúne as cores, fontes e logos que você reutiliza em todos os projetos. Crie
+          um e aplique-o a qualquer projeto com um clique.
         </p>
       ) : (
         <>
-          {/* Name */}
           <div>
-            <label class="text-[11px] text-zinc-400 mb-1 block">Kit name</label>
+            <label class="text-[11px] text-zinc-400 mb-1 block">Nome do kit</label>
             <input
               type="text"
               class="w-full bg-white border border-zinc-300 rounded-md text-xs text-zinc-700 px-2 py-1.5 outline-none focus:border-accent"
               value={activeBrandKit.name}
               onChange={(e) =>
                 updateBrandKit(activeBrandKit.id, {
-                  name: (e.target as HTMLInputElement).value || "My Brand",
+                  name: (e.target as HTMLInputElement).value || "Minha marca",
                 })
               }
             />
           </div>
 
-          {/* Colors */}
           <div>
             <label class="text-[11px] text-zinc-400 mb-1.5 block">
-              Brand colors{" "}
-              <span class="text-zinc-300">— click to apply to selection</span>
+              Cores da marca <span class="text-zinc-300">— clique para aplicar à seleção</span>
             </label>
             <div class="grid grid-cols-5 gap-1.5">
               {activeBrandKit.colors.map((color, i) => (
@@ -151,13 +147,13 @@ export function BrandKitPanel() {
                     class="w-full aspect-square rounded-md border border-zinc-300 cursor-pointer transition-all hover:scale-110 hover:border-accent"
                     style={{ background: color }}
                     title={color}
-                    aria-label={`Brand color ${color}`}
+                    aria-label={`Cor da marca ${color}`}
                     onClick={() => applyBrandColor(color)}
                   />
                   <button
                     class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-700 text-white border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                    title={`Remove ${color}`}
-                    aria-label={`Remove brand color ${color}`}
+                    title={`Remover ${color}`}
+                    aria-label={`Remover cor da marca ${color}`}
                     onClick={() =>
                       updateBrandKit(activeBrandKit.id, {
                         colors: activeBrandKit.colors.filter((_, j) => j !== i),
@@ -174,7 +170,7 @@ export function BrandKitPanel() {
                   <input
                     type="color"
                     class="sr-only"
-                    aria-label="Add brand color"
+                    aria-label="Adicionar cor da marca"
                     onChange={(e) =>
                       updateBrandKit(activeBrandKit.id, {
                         colors: [...activeBrandKit.colors, (e.target as HTMLInputElement).value],
@@ -186,24 +182,22 @@ export function BrandKitPanel() {
             </div>
           </div>
 
-          {/* Fonts */}
           <div class="flex flex-col gap-2">
             <FontPicker
-              label="Heading font"
+              label="Fonte do título"
               value={activeBrandKit.heading_font}
               onChange={(heading_font) => updateBrandKit(activeBrandKit.id, { heading_font })}
             />
             <FontPicker
-              label="Body font"
+              label="Fonte do texto"
               value={activeBrandKit.body_font}
               onChange={(body_font) => updateBrandKit(activeBrandKit.id, { body_font })}
             />
           </div>
 
-          {/* Logos */}
           <div>
             <label class="text-[11px] text-zinc-400 mb-1.5 block">
-              Logos <span class="text-zinc-300">— click to place</span>
+              Logos <span class="text-zinc-300">— clique para posicionar</span>
             </label>
             <div class="grid grid-cols-3 gap-1.5">
               {activeBrandKit.logos.map((url, i) => (
@@ -211,13 +205,13 @@ export function BrandKitPanel() {
                   <button
                     class="w-full aspect-square rounded-md border border-zinc-200 bg-[repeating-conic-gradient(#f4f4f5_0%_25%,#ffffff_0%_50%)] bg-[length:12px_12px] cursor-pointer p-1 hover:border-accent transition-all"
                     onClick={() => addImage(url)}
-                    title="Add logo to canvas"
+                    title="Adicionar logo à tela"
                   >
                     <img src={url} alt="" class="w-full h-full object-contain" />
                   </button>
                   <button
                     class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-zinc-700 text-white border-none cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                    aria-label="Remove logo"
+                    aria-label="Remover logo"
                     onClick={() =>
                       updateBrandKit(activeBrandKit.id, {
                         logos: activeBrandKit.logos.filter((_, j) => j !== i),
@@ -232,7 +226,7 @@ export function BrandKitPanel() {
                 <button
                   class="w-full aspect-square rounded-md border border-dashed border-zinc-300 cursor-pointer flex items-center justify-center text-zinc-400 hover:border-accent hover:text-accent transition-all"
                   onClick={() => logoInputRef.current?.click()}
-                  aria-label="Upload logo"
+                  aria-label="Enviar logo"
                 >
                   <Upload size={14} />
                 </button>
@@ -247,26 +241,24 @@ export function BrandKitPanel() {
             />
           </div>
 
-          {/* Apply */}
           <button
             class="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-accent text-white border-none cursor-pointer text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
             onClick={() => applyBrandKit(activeBrandKit)}
             disabled={activeBrandKit.colors.length === 0}
             title={
               activeBrandKit.colors.length === 0
-                ? "Add at least one brand color first"
-                : "Apply brand fonts and colors to this page"
+                ? "Adicione pelo menos uma cor da marca primeiro"
+                : "Aplicar fontes e cores da marca a esta página"
             }
           >
             <Wand2 size={13} />
-            Apply to this page
+            Aplicar a esta página
           </button>
 
-          {/* Portability */}
           <div class="pt-1 border-t border-zinc-200">
             <p class="text-[10px] text-zinc-400 mt-2 mb-1.5 leading-relaxed">
-              Your kit is a plain JSON file. Take it to another OpenDesign install, or hand it to a
-              client.
+              Seu kit é um arquivo JSON simples. Leve-o para outra instalação do OpenDesign ou
+              entregue-o a um cliente.
             </p>
             <div class="flex gap-1.5">
               <button
@@ -274,20 +266,20 @@ export function BrandKitPanel() {
                 onClick={handleExport}
               >
                 <Download size={12} />
-                Export
+                Exportar
               </button>
               <button
                 class="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md border border-zinc-300 bg-white text-[11px] text-zinc-500 cursor-pointer hover:border-accent hover:text-accent transition-all"
                 onClick={() => importInputRef.current?.click()}
               >
                 <Upload size={12} />
-                Import
+                Importar
               </button>
               <button
                 class="shrink-0 p-1.5 rounded-md border border-zinc-300 bg-white text-zinc-400 cursor-pointer hover:border-red-400 hover:text-red-500 transition-all"
                 onClick={() => deleteBrandKit(activeBrandKit.id)}
-                title="Delete this kit"
-                aria-label="Delete this brand kit"
+                title="Excluir este kit"
+                aria-label="Excluir este kit de marca"
               >
                 <Trash2 size={12} />
               </button>

@@ -21,7 +21,7 @@ export function useBrandKits() {
         setBrandKits(kits);
         setActiveBrandKitId((prev) => prev ?? kits[0]?.id ?? null);
       } catch (e) {
-        console.error("Failed to load brand kits:", e);
+        console.error("Falha ao carregar os kits de marca:", e);
       }
     })();
   }, []);
@@ -41,7 +41,7 @@ export function useBrandKits() {
       const kit = await api<BrandKit>("PUT", `/api/brand-kits/${id}`, input);
       setBrandKits((prev) => prev.map((k) => (k.id === id ? kit : k)));
     } catch (e) {
-      console.error("Failed to save brand kit:", e);
+      console.error("Falha ao salvar o kit de marca:", e);
     }
   }, []);
 

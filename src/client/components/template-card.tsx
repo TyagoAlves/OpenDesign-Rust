@@ -57,7 +57,7 @@ export function TemplateCard({ template, onClick }: Props) {
             class="w-full h-full object-contain"
           />
         ) : (
-          <span class="text-zinc-300 text-[10px] font-medium">Loading...</span>
+          <span class="text-zinc-300 text-[10px] font-medium">Carregando…</span>
         )}
       </div>
       {/* Label */}

@@ -1,0 +1,57 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "OpenDesign",
+  "version": "1.0.0",
+  "identifier": "com.opendesign.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "OpenDesign",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true,
+        "visible": false
+      },
+      {
+        "label": "splashscreen",
+        "title": "OpenDesign",
+        "url": "splashscreen.html",
+        "width": 420,
+        "height": 320,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "center": true,
+        "alwaysOnTop": true,
+        "shadow": false,
+        "skipTaskbar": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' http://localhost:* ws://localhost:*"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "src-tauri/icons/32x32.png",
+      "src-tauri/icons/128x128.png",
+      "src-tauri/icons/128x128@2x.png",
+      "src-tauri/icons/icon.icns",
+      "src-tauri/icons/icon.ico"
+    ]
+  }
+}

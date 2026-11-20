@@ -61,7 +61,7 @@ test("custom fonts validate, persist, reload and travel with brand kits", async 
     assert.deepEqual(registered, [imported.family]);
     await loadCustomFont(imported);
     assert.deepEqual(registered, [imported.family, imported.family]);
-    await assert.rejects(importCustomFont(new File(["invalid file"], "broken.woff2")), /decoded/);
+    await assert.rejects(importCustomFont(new File(["invalid file"], "broken.woff2")), /decodificar/);
     assert.equal(uploads, 1);
     globalThis.fetch = async () => Response.json({ error: "Storage unavailable" }, { status: 500 });
     await assert.rejects(importCustomFont(file), /Storage unavailable/);

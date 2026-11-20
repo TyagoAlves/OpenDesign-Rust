@@ -28,11 +28,11 @@ export function DesignList() {
         }}
       >
         <Plus size={14} />
-        New Design
+        Novo projeto
       </button>
 
       {designs.length === 0 && (
-        <p class="text-zinc-400 text-[11px] text-center py-4">No saved designs yet</p>
+        <p class="text-zinc-400 text-[11px] text-center py-4">Nenhum projeto salvo ainda</p>
       )}
 
       {designs.map((d) => (

@@ -12,16 +12,16 @@ export interface CanvasSize {
 }
 
 export const CANVAS_SIZES: CanvasSize[] = [
-  { group: "LinkedIn", label: "LinkedIn Square", width: 1080, height: 1080 },
+  { group: "LinkedIn", label: "LinkedIn Quadrado", width: 1080, height: 1080 },
   // LinkedIn's recommended carousel slide. 4:5 fills the most phone screen.
-  { group: "LinkedIn", label: "LinkedIn Carousel", width: 1080, height: 1350 },
-  { group: "LinkedIn", label: "LinkedIn Landscape", width: 1200, height: 627 },
-  { group: "LinkedIn", label: "LinkedIn Portrait", width: 1200, height: 1500 },
-  { group: "Instagram", label: "Instagram Portrait", width: 1080, height: 1350 },
+  { group: "LinkedIn", label: "LinkedIn Carrossel", width: 1080, height: 1350 },
+  { group: "LinkedIn", label: "LinkedIn Paisagem", width: 1200, height: 627 },
+  { group: "LinkedIn", label: "LinkedIn Retrato", width: 1200, height: 1500 },
+  { group: "Instagram", label: "Instagram Retrato", width: 1080, height: 1350 },
   { group: "Instagram", label: "Instagram Story", width: 1080, height: 1920 },
-  { group: "More", label: "Pinterest Pin", width: 1000, height: 1500 },
-  { group: "More", label: "YouTube Thumbnail", width: 1280, height: 720 },
-  { group: "More", label: "Presentation 16:9", width: 1920, height: 1080 },
+  { group: "Outros", label: "Pinterest Pin", width: 1000, height: 1500 },
+  { group: "Outros", label: "Miniatura do YouTube", width: 1280, height: 720 },
+  { group: "Outros", label: "Apresentação 16:9", width: 1920, height: 1080 },
 ];
 
 // Guardrails for the custom size fields. The upper bound keeps a typo from

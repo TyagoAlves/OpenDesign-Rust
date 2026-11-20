@@ -20,23 +20,23 @@ import { BrandKitPanel } from "./brand-kit-panel";
 type Section = "templates" | "brand" | "text" | "shapes" | "images" | "background" | "designs";
 
 const SECTIONS: { key: Section; icon: typeof LayoutGrid; label: string }[] = [
-  { key: "templates", icon: Sparkles, label: "Templates" },
-  { key: "brand", icon: SwatchBook, label: "Brand" },
-  { key: "shapes", icon: Square, label: "Elements" },
-  { key: "text", icon: Type, label: "Text" },
-  { key: "images", icon: Upload, label: "Uploads" },
-  { key: "background", icon: Palette, label: "Bg" },
-  { key: "designs", icon: LayoutGrid, label: "Designs" },
+  { key: "templates", icon: Sparkles, label: "Modelos" },
+  { key: "brand", icon: SwatchBook, label: "Marca" },
+  { key: "shapes", icon: Square, label: "Elementos" },
+  { key: "text", icon: Type, label: "Texto" },
+  { key: "images", icon: Upload, label: "Enviar arquivos" },
+  { key: "background", icon: Palette, label: "Fundo" },
+  { key: "designs", icon: LayoutGrid, label: "Projetos" },
 ];
 
 const SECTION_TITLES: Record<Section, string> = {
-  templates: "Templates",
-  brand: "Brand Kit",
-  shapes: "Elements",
-  text: "Text",
-  images: "Uploads",
-  background: "Background",
-  designs: "Designs",
+  templates: "Modelos",
+  brand: "Kit de marca",
+  shapes: "Elementos",
+  text: "Texto",
+  images: "Enviar arquivos",
+  background: "Plano de fundo",
+  designs: "Projetos",
 };
 
 const GRADIENT_PRESETS = [
@@ -79,7 +79,7 @@ export function LeftSidebar() {
           if (data.url) addImage(data.url);
         }
       } catch (e) {
-        console.error("Upload failed:", e);
+        console.error("Não foi possível enviar as imagens:", e);
       } finally {
         setUploading(false);
       }
@@ -97,7 +97,7 @@ export function LeftSidebar() {
         const data = await resp.json();
         if (data.url) setBackground("image", data.url);
       } catch (e) {
-        console.error("Bg upload failed:", e);
+        console.error("Não foi possível enviar a imagem de fundo:", e);
       }
     },
     [setBackground]
@@ -150,10 +150,10 @@ export function LeftSidebar() {
                 {activeSection === "templates" && (
                   <div>
                     {templates.length === 0 ? (
-                      <p class="text-zinc-400 text-[11px]">No templates yet.</p>
+                      <p class="text-zinc-400 text-[11px]">Nenhum modelo ainda.</p>
                     ) : (
                       <>
-                        <p class="text-zinc-400 text-[11px] mb-3">Click a template to apply</p>
+                        <p class="text-zinc-400 text-[11px] mb-3">Clique em um modelo para aplicar</p>
                         <div class="grid grid-cols-2 gap-2">
                           {templates.map((t) => (
                             <TemplateCard key={t.id} template={t} onClick={() => loadTemplate(t)} />
@@ -168,16 +168,16 @@ export function LeftSidebar() {
 
                 {activeSection === "text" && (
                   <div class="flex flex-col gap-2">
-                    <p class="text-zinc-400 text-[11px] mb-1">Click to add text</p>
+                    <p class="text-zinc-400 text-[11px] mb-1">Clique para adicionar texto</p>
                     <button
                       class="w-full text-left p-3 rounded-lg bg-white border border-zinc-200 cursor-pointer transition-all hover:border-accent hover:bg-accent/5 group"
                       onClick={() => addText("heading")}
                     >
                       <span class="text-lg font-bold text-zinc-900 group-hover:text-accent transition-colors">
-                        Add a heading
+                        Adicionar um título
                       </span>
                       <span class="block text-[10px] text-zinc-400 mt-0.5">
-                        Montserrat Bold, 48px
+                        Montserrat Negrito, 48 px
                       </span>
                     </button>
                     <button
@@ -185,10 +185,10 @@ export function LeftSidebar() {
                       onClick={() => addText("subheading")}
                     >
                       <span class="text-sm font-medium text-zinc-900 group-hover:text-accent transition-colors">
-                        Add a subheading
+                        Adicionar um subtítulo
                       </span>
                       <span class="block text-[10px] text-zinc-400 mt-0.5">
-                        Inter Medium, 32px
+                        Inter Médio, 32 px
                       </span>
                     </button>
                     <button
@@ -196,10 +196,10 @@ export function LeftSidebar() {
                       onClick={() => addText("body")}
                     >
                       <span class="text-xs text-zinc-900 group-hover:text-accent transition-colors">
-                        Add body text
+                        Adicionar texto de corpo
                       </span>
                       <span class="block text-[10px] text-zinc-400 mt-0.5">
-                        Inter Regular, 18px
+                        Inter Regular, 18 px
                       </span>
                     </button>
                   </div>
@@ -207,13 +207,13 @@ export function LeftSidebar() {
 
                 {activeSection === "shapes" && (
                   <div>
-                    <p class="text-zinc-400 text-[11px] mb-2">Click to add a shape</p>
+                    <p class="text-zinc-400 text-[11px] mb-2">Clique para adicionar uma forma</p>
                     <div class="grid grid-cols-2 gap-2">
                       {[
-                        { type: "rect" as const, icon: Square, label: "Rectangle" },
-                        { type: "circle" as const, icon: Circle, label: "Circle" },
-                        { type: "triangle" as const, icon: Triangle, label: "Triangle" },
-                        { type: "line" as const, icon: Minus, label: "Line" },
+                        { type: "rect" as const, icon: Square, label: "Retângulo" },
+                        { type: "circle" as const, icon: Circle, label: "Círculo" },
+                        { type: "triangle" as const, icon: Triangle, label: "Triângulo" },
+                        { type: "line" as const, icon: Minus, label: "Linha" },
                       ].map((s) => (
                         <button
                           key={s.type}
@@ -230,7 +230,7 @@ export function LeftSidebar() {
 
                 {activeSection === "images" && (
                   <div>
-                    <p class="text-zinc-400 text-[11px] mb-2">Upload images to add to canvas</p>
+                    <p class="text-zinc-400 text-[11px] mb-2">Envie imagens para adicionar à tela</p>
                     <div
                       class="border-2 border-dashed border-zinc-300 rounded-lg p-6 text-center cursor-pointer transition-all hover:border-accent/50 hover:bg-accent/5"
                       onClick={() => fileInputRef.current?.click()}
@@ -239,7 +239,7 @@ export function LeftSidebar() {
                     >
                       <Upload size={24} class="text-zinc-400 mx-auto mb-2" />
                       <p class="text-xs text-zinc-400">
-                        {uploading ? "Uploading..." : "Click or drag images here"}
+                        {uploading ? "Enviando…" : "Clique ou arraste imagens aqui"}
                       </p>
                       <p class="text-[10px] text-zinc-600 mt-1">PNG, JPG, SVG, WebP</p>
                     </div>
@@ -256,7 +256,7 @@ export function LeftSidebar() {
 
                 {activeSection === "background" && (
                   <div>
-                    <p class="text-zinc-400 text-[11px] mb-2">Solid colors</p>
+                    <p class="text-zinc-400 text-[11px] mb-2">Cores sólidas</p>
                     <div class="grid grid-cols-4 gap-1.5 mb-4">
                       {BG_COLORS.map((c) => (
                         <button
@@ -268,7 +268,7 @@ export function LeftSidebar() {
                       ))}
                     </div>
 
-                    <p class="text-zinc-400 text-[11px] mb-2">Custom color</p>
+                    <p class="text-zinc-400 text-[11px] mb-2">Cor personalizada</p>
                     <input
                       type="color"
                       class="w-full h-8 rounded-md border border-zinc-300 cursor-pointer bg-transparent"
@@ -277,7 +277,7 @@ export function LeftSidebar() {
                       }
                     />
 
-                    <p class="text-zinc-400 text-[11px] mb-2 mt-4">Gradient presets</p>
+                    <p class="text-zinc-400 text-[11px] mb-2 mt-4">Gradientes predefinidos</p>
                     <div class="grid grid-cols-3 gap-1.5 mb-4">
                       {GRADIENT_PRESETS.map((g, i) => (
                         <button
@@ -292,13 +292,13 @@ export function LeftSidebar() {
                       ))}
                     </div>
 
-                    <p class="text-zinc-400 text-[11px] mb-2">Background image</p>
+                    <p class="text-zinc-400 text-[11px] mb-2">Imagem de fundo</p>
                     <button
                       class="w-full p-3 rounded-lg bg-white border border-zinc-200 cursor-pointer text-xs text-zinc-400 hover:border-accent hover:text-zinc-800 transition-all"
                       onClick={() => bgFileRef.current?.click()}
                     >
                       <Upload size={14} class="inline mr-1.5" />
-                      Upload image
+                      Enviar imagem
                     </button>
                     <input
                       ref={bgFileRef}

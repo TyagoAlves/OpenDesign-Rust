@@ -9,6 +9,10 @@ const jspdfOptional = fileURLToPath(new URL("./src/client/lib/jspdf-optional.ts"
 
 export default defineConfig({
   plugins: [preact(), tailwindcss()],
+  // Tauri serves frontendDist from its custom protocol (tauri://localhost on
+  // Linux/macOS, http://tauri.localhost on Windows). Root-relative /assets/*
+  // URLs from the default base can resolve against the wrong origin there.
+  base: "./",
   build: { outDir: "dist" },
   resolve: {
     alias: {

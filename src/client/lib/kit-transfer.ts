@@ -14,6 +14,21 @@ import { serializeKit, parseKitFile } from "./brand";
  * logo into every design's canvas JSON. Rehydrating keeps stored values short.
  */
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const match = /^data:([^;,]+)?((?:;[^,]+)*?)(;base64)?,([\s\S]*)$/i.exec(dataUrl);
+  if (!match) throw new Error("Data URL inválida");
+  const mime = match[1] || "application/octet-stream";
+  const isBase64 = !!match[3];
+  const data = match[4] || "";
+  if (isBase64) {
+    const binary = atob(data.replace(/\s/g, ""));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  }
+  return new Blob([decodeURIComponent(data)], { type: mime });
+}
+
 async function blobToDataUrl(blob: Blob): Promise<string | null> {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -35,7 +50,7 @@ async function inlineAsset(url: string): Promise<string | null> {
 
 async function storeLogo(dataUrl: string): Promise<string | null> {
   try {
-    const blob = await (await fetch(dataUrl)).blob();
+    const blob = dataUrlToBlob(dataUrl);
     // The upload route keys the stored file off its extension, so derive one
     // from the MIME type rather than the (absent) original filename.
     const ext = (blob.type.split("/")[1] || "png").replace("svg+xml", "svg");
@@ -89,7 +104,7 @@ export async function importKit(
       if (!font || typeof font.family !== "string" || ![parsed.heading_font, parsed.body_font].includes(font.family)) continue;
       try {
         if (typeof font.data !== "string" || !font.data.startsWith("data:") || typeof font.filename !== "string") throw new Error("Invalid font");
-        const blob = await (await fetch(font.data)).blob();
+        const blob = dataUrlToBlob(font.data);
         const family = await importFont(new File([blob], font.filename, { type: blob.type }));
         if (parsed.heading_font === font.family) parsed.heading_font = family;
         if (parsed.body_font === font.family) parsed.body_font = family;

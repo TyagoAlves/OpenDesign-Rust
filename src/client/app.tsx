@@ -8,6 +8,7 @@ import { Home } from "./components/home";
 import { useFonts } from "./fonts";
 import { AppNav, reportLocation } from "@clawnify/app/client";
 import { useEffect, useRef } from "preact/hooks";
+import { isTauri, signalAppReady } from "./lib/tauri";
 
 export function App() {
   const { path, navigate, designId } = useRouter();
@@ -17,11 +18,24 @@ export function App() {
   saveSchedulerRef.current = designState.scheduleSave;
   const brandState = useBrandKits();
   const fontState = useFonts();
+  const readySignaledRef = useRef(false);
+
+  // Tauri: sinaliza "app pronto" quando a UI inicial está utilizável (fecha o splash
+  // respeitando tempo mínimo; fallback de timeout fica no Rust). No-op fora do Tauri.
+  useEffect(() => {
+    if (readySignaledRef.current) return;
+    if (fontState.fontsError || (!designState.loading && !fontState.fontsLoading)) {
+      readySignaledRef.current = true;
+      void signalAppReady();
+    }
+  }, [designState.loading, fontState.fontsLoading, fontState.fontsError]);
 
   // In the Clawnify dashboard the open screen lives in the host URL, so a
   // reload comes back to the same design.
   useEffect(() => {
-    reportLocation(path);
+    // The Clawnify host bridge is meaningless in the desktop webview: it would
+    // only post a message to itself. Keep the report in the browser/embedded app.
+    if (!isTauri()) reportLocation(path);
   }, [path]);
 
   // Load design from URL on initial load and when designId changes
@@ -54,15 +68,16 @@ export function App() {
   // Inside Clawnify the dashboard draws this navigation. Anywhere else the app
   // keeps its own layout (standalone draws nothing) and AppNav only adds the
   // SDK's notice for a self-hosted copy.
-  const hostNav = (
+  // No desktop Tauri o cartão/integração Clawnify é suprimido (evita 404 de presence.js).
+  const hostNav = isTauri() ? null : (
     <AppNav
-      title="Design"
+      title="Projeto"
       icon="image"
       active={designId ?? "home"}
       groups={[
-        { items: [{ id: "home", label: "Designs", icon: "layout-grid", href: "/", home: true }] },
+        { items: [{ id: "home", label: "Projetos", icon: "layout-grid", href: "/", home: true }] },
         {
-          label: "Recent designs",
+          label: "Projetos recentes",
           items: designState.designs.map((d) => ({ id: d.id, label: d.name, icon: "image", href: `/design/${d.id}` })),
         },
       ]}
@@ -71,10 +86,30 @@ export function App() {
     />
   );
 
+  // Falha de persistência (ex.: createDesign no desktop) precisa ficar visível:
+  // console.error sozinho não aparece no build Tauri sem devtools.
+  const persistenceError = designState.error ? (
+    <div
+      role="alert"
+      class="fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-[min(90vw,32rem)] px-4 py-2.5 rounded-lg bg-red-600 text-white text-xs shadow-lg flex items-start gap-3"
+    >
+      <span class="flex-1 leading-relaxed">{designState.error}</span>
+      <button
+        type="button"
+        aria-label="Fechar aviso"
+        class="bg-transparent border-none text-white cursor-pointer text-base leading-none p-0"
+        onClick={designState.clearError}
+      >
+        ×
+      </button>
+    </div>
+  ) : null;
+
   if (fontState.fontsError) {
     return <div class="flex flex-col items-center justify-center gap-3 h-full" role="alert">
+      {persistenceError}
       <p>{fontState.fontsError}</p>
-      <button class="px-3 py-2 border rounded cursor-pointer" onClick={() => window.location.reload()}>Reload</button>
+      <button class="px-3 py-2 border rounded cursor-pointer" onClick={() => window.location.reload()}>Recarregar</button>
     </div>;
   }
 
@@ -86,7 +121,7 @@ export function App() {
       <div class="flex items-center justify-center h-full bg-[#F3F4F7]">
         <div class="text-center">
           <div class="spinner !w-6 !h-6 !border-accent/30 !border-t-accent mb-3 mx-auto" />
-          <p class="text-zinc-400 text-sm">Loading...</p>
+          <p class="text-zinc-400 text-sm">Carregando…</p>
         </div>
       </div>
       </>
@@ -98,6 +133,7 @@ export function App() {
     return (
       <>
       {hostNav}
+      {persistenceError}
       <Home
         designs={designState.designs}
         templates={designState.templates}
@@ -125,6 +161,7 @@ export function App() {
   return (
     <EditorContext.Provider value={contextValue}>
       {hostNav}
+      {persistenceError}
       <Editor />
     </EditorContext.Provider>
   );

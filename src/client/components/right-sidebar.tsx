@@ -35,7 +35,7 @@ function BrandSwatches({ onPick }: { onPick: (color: string) => void }) {
           class="w-5 h-5 rounded border border-zinc-300 cursor-pointer transition-all hover:scale-110 hover:border-accent"
           style={{ background: color }}
           title={`${activeBrandKit.name} — ${color}`}
-          aria-label={`Use brand color ${color}`}
+          aria-label={`Usar cor da marca ${color}`}
           onClick={() => onPick(color)}
         />
       ))}
@@ -69,10 +69,10 @@ function FieldNameInput({
 
   return (
     <div>
-      <label class="text-[11px] text-zinc-400 mb-1 block">Field name</label>
+      <label class="text-[11px] text-zinc-400 mb-1 block">Nome do campo</label>
       <input
         type="text"
-        placeholder="e.g. headline"
+        placeholder="ex.: título"
         class="w-full bg-white border border-zinc-300 rounded-md text-xs text-zinc-700 px-2 py-1.5 outline-none focus:border-accent font-mono"
         value={draft}
         onInput={(e) => setDraft((e.target as HTMLInputElement).value)}
@@ -83,8 +83,8 @@ function FieldNameInput({
       />
       <p class="text-[10px] text-zinc-400 mt-1 leading-snug">
         {saved
-          ? "Fillable through the design's /fill endpoint."
-          : "Name it to fill it from data or an agent."}
+          ? "Preenchível pelo endpoint /fill do projeto."
+          : "Nomeie-o para preenchê-lo com dados ou por um agente."}
       </p>
     </div>
   );
@@ -105,14 +105,14 @@ export function RightSidebar() {
     return (
       <aside class="w-[280px] bg-white border-l border-zinc-200 flex flex-col shrink-0">
         <div class="p-4 border-b border-zinc-200">
-          <h2 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Canvas</h2>
+          <h2 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Tela</h2>
         </div>
         <div class="p-4 flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] text-zinc-400">Dimensions</span>
+            <span class="text-[11px] text-zinc-400">Dimensões</span>
             <span class="text-[11px] text-zinc-600 font-mono">{canvasWidth} x {canvasHeight}</span>
           </div>
-          <label class="text-[11px] text-zinc-400">Background color</label>
+          <label class="text-[11px] text-zinc-400">Cor de fundo</label>
           <input
             type="color"
             class="w-full h-8 rounded-md border border-zinc-300 cursor-pointer bg-transparent"
@@ -129,7 +129,7 @@ export function RightSidebar() {
       {/* Header */}
       <div class="p-4 border-b border-zinc-200 flex items-center justify-between">
         <h2 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-          {isText ? "Text" : isImage ? "Image" : "Shape"}
+          {isText ? "Texto" : isImage ? "Imagem" : "Forma"}
         </h2>
         <div class="flex gap-1">
           <button
@@ -141,14 +141,14 @@ export function RightSidebar() {
               canvas.add(clone);
               canvas.setActiveObject(clone);
             }}
-            title="Duplicate"
+            title="Duplicar"
           >
             <Copy size={14} />
           </button>
           <button
             class="p-1 rounded text-zinc-400 bg-transparent border-none cursor-pointer hover:text-red-400 hover:bg-red-500/10 transition-all"
             onClick={deleteSelected}
-            title="Delete"
+            title="Excluir"
           >
             <Trash2 size={14} />
           </button>
@@ -165,13 +165,13 @@ export function RightSidebar() {
         )}
 
         <div>
-          <label class="text-[11px] text-zinc-400 mb-1 block">Layer order</label>
+          <label class="text-[11px] text-zinc-400 mb-1 block">Ordem das camadas</label>
           <div class="flex gap-1">
             {([
-              ["front", BringToFront, "To front", layerIndex === layerCount - 1],
-              ["forward", MoveUp, "Forward", layerIndex === layerCount - 1],
-              ["backward", MoveDown, "Backward", layerIndex <= 0],
-              ["back", SendToBack, "To back", layerIndex <= 0],
+              ["front", BringToFront, "Para a frente", layerIndex === layerCount - 1],
+              ["forward", MoveUp, "Avançar", layerIndex === layerCount - 1],
+              ["backward", MoveDown, "Recuar", layerIndex <= 0],
+              ["back", SendToBack, "Para o fundo", layerIndex <= 0],
             ] as const).map(([action, Icon, label, disabled]) => (
               <button
                 key={action}
@@ -193,14 +193,14 @@ export function RightSidebar() {
           <>
             {/* Font family */}
             <FontPicker
-              label="Font family"
+              label="Família da fonte"
               value={(selectedObject as fabric.IText).fontFamily || "Inter"}
               onChange={(fontFamily) => updateSelectedObject({ fontFamily })}
             />
 
             {/* Font size */}
             <div>
-              <label class="text-[11px] text-zinc-400 mb-1 block">Font size</label>
+              <label class="text-[11px] text-zinc-400 mb-1 block">Tamanho da fonte</label>
               <input
                 type="number"
                 class="w-full bg-white border border-zinc-300 rounded-md text-xs text-zinc-700 px-2 py-1.5 outline-none focus:border-accent"
@@ -215,7 +215,7 @@ export function RightSidebar() {
 
             {/* Bold / Italic / Underline */}
             <div>
-              <label class="text-[11px] text-zinc-400 mb-1 block">Style</label>
+              <label class="text-[11px] text-zinc-400 mb-1 block">Estilo</label>
               <div class="flex gap-1">
                 <button
                   class={`p-1.5 rounded-md border cursor-pointer transition-all ${
@@ -265,7 +265,7 @@ export function RightSidebar() {
 
             {/* Text alignment */}
             <div>
-              <label class="text-[11px] text-zinc-400 mb-1 block">Alignment</label>
+              <label class="text-[11px] text-zinc-400 mb-1 block">Alinhamento</label>
               <div class="flex gap-1">
                 {[
                   { align: "left", icon: AlignLeft },
@@ -289,7 +289,7 @@ export function RightSidebar() {
 
             {/* Text color */}
             <div>
-              <label class="text-[11px] text-zinc-400 mb-1 block">Color</label>
+              <label class="text-[11px] text-zinc-400 mb-1 block">Cor</label>
               <div class="flex items-center gap-2">
                 <input
                   type="color"
@@ -314,7 +314,7 @@ export function RightSidebar() {
             {/* Line height */}
             <div>
               <label class="text-[11px] text-zinc-400 mb-1 flex justify-between">
-                Line height
+                Altura da linha
                 <span class="text-zinc-400 font-mono">{((selectedObject as any).lineHeight || 1.2).toFixed(1)}</span>
               </label>
               <input
@@ -335,7 +335,7 @@ export function RightSidebar() {
             {/* Letter spacing */}
             <div>
               <label class="text-[11px] text-zinc-400 mb-1 flex justify-between">
-                Letter spacing
+                Espaçamento entre letras
                 <span class="text-zinc-400 font-mono">{(selectedObject as any).charSpacing || 0}</span>
               </label>
               <input
@@ -360,7 +360,7 @@ export function RightSidebar() {
           <>
             {/* Fill color */}
             <div>
-              <label class="text-[11px] text-zinc-400 mb-1 block">Fill color</label>
+              <label class="text-[11px] text-zinc-400 mb-1 block">Cor de preenchimento</label>
               <div class="flex items-center gap-2">
                 <input
                   type="color"
@@ -384,7 +384,7 @@ export function RightSidebar() {
 
             {/* Stroke */}
             <div>
-              <label class="text-[11px] text-zinc-400 mb-1 block">Stroke color</label>
+              <label class="text-[11px] text-zinc-400 mb-1 block">Cor do contorno</label>
               <div class="flex items-center gap-2">
                 <input
                   type="color"
@@ -399,7 +399,7 @@ export function RightSidebar() {
                   class="w-16 bg-white border border-zinc-300 rounded-md text-xs text-zinc-700 px-2 py-1.5 outline-none focus:border-accent"
                   value={selectedObject.strokeWidth || 0}
                   min={0}
-                  placeholder="Width"
+                  placeholder="Largura"
                   onInput={(e) =>
                     updateSelectedObject({
                       strokeWidth: parseInt((e.target as HTMLInputElement).value) || 0,
@@ -413,7 +413,7 @@ export function RightSidebar() {
             {selectedObject instanceof fabric.Rect && (
               <div>
                 <label class="text-[11px] text-zinc-400 mb-1 flex justify-between">
-                  Border radius
+                  Raio da borda
                   <span class="text-zinc-400 font-mono">{(selectedObject as any).rx || 0}px</span>
                 </label>
                 <input
@@ -436,7 +436,7 @@ export function RightSidebar() {
         {isImage && (
           <>
             <div>
-              <label class="text-[11px] text-zinc-400 mb-1 block">Flip</label>
+              <label class="text-[11px] text-zinc-400 mb-1 block">Inverter</label>
               <div class="flex gap-1">
                 <button
                   class={`p-1.5 rounded-md border cursor-pointer transition-all ${
@@ -466,7 +466,7 @@ export function RightSidebar() {
         {/* ── Common: Opacity ───────────────────────────────────────── */}
         <div>
           <label class="text-[11px] text-zinc-400 mb-1 flex justify-between">
-            Opacity
+            Opacidade
             <span class="text-zinc-400 font-mono">{Math.round((selectedObject.opacity ?? 1) * 100)}%</span>
           </label>
           <input

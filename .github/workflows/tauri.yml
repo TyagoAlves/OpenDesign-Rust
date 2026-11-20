@@ -1,0 +1,153 @@
+# ============================================================================
+# OpenDesign — build desktop com Tauri 2 (WINDOWS FIRST)
+# Apoio AG-08 (Manuela) · liderança: Renata
+#
+# STATUS: arquivo em rascunho no CAMINHO FINAL (.github/workflows/tauri.yml),
+# dentro de OpenDesign/. NÃO foi commitado, pushado, tagueado nem publicado.
+# OK explícito do Tyago é necessário para commitar/pushar (e, depois, tag/release).
+#
+# Decisões do Tyago (dúvida 7/8 do Douglas, 2026-11-20):
+#   - MATRIX REDUZIDA A WINDOWS nesta rodada. macOS e Linux voltam depois, com
+#     OK do Tyago. Não há Mac no time nem autorização para conta Apple
+#     Developer/assinatura/notarização: nenhum segredo da Apple é usado aqui.
+#   - INSTALADOR SÓ NO CI: o tauri.conf.json canônico de src-tauri/ NÃO muda
+#     (bundle.active:false para o .exe cru local). Este job gera MSI + NSIS
+#     com um override de config exclusivo do CI (src-tauri/ci-build.json).
+#   - Gatilho inalterado: push em tag v* → release RASCUNHO (releaseDraft:true);
+#     workflow_dispatch → dry-run, NENHUM release. Publish manual depois do QA
+#     do Douglas e do OK explícito do Tyago. Nada disso é autorização para
+#     criar/pushar tag ou publicar release agora.
+# ============================================================================
+
+name: Build desktop (Tauri — Windows)
+
+on:
+  # Release = tag v* (decisão do Tyago). O rascunho sai da tag.
+  push:
+    tags:
+      - 'v*'
+
+  # Manual = somente build de teste/dry-run, sem criar release.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tauri-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: windows
+    runs-on: windows-latest
+    timeout-minutes: 120
+    permissions:
+      # write é necessário para criar o rascunho de release no push de tag.
+      # No disparo manual o token também tem write, mas nenhum release é criado.
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # O projeto usa pnpm (pnpm-lock.yaml v9), NAO npm. @tauri-apps/cli já
+      # está em devDependencies — não precisa "npm install --save-dev".
+      - name: pnpm 10.34.9
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4 (commit de v4^{})
+        with:
+          version: 10.34.9
+          run_install: false
+
+      - name: Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Instalar dependências do frontend
+        run: pnpm install --frozen-lockfile
+
+      # rust-version = 1.90 / edition 2024 no src-tauri/Cargo.toml.
+      # Sem `targets`: só a arquitetura nativa do runner windows-latest.
+      - name: Rust stable
+        uses: dtolnay/rust-toolchain@39008827e6b4319a349e9a42dfc90579dd25f1ca # stable
+
+      # O workspace tem [profile.release] lto = true no Cargo.toml da raiz.
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2 (commit de v2^{})
+
+      # Override EXCLUSIVO DO CI: herda todo o tauri.conf.json canônico e
+      # sobrescreve somente `bundle` (active:true + MSI/NSIS). O config local
+      # permanece com active:false para o .exe cru. Se os secrets WINDOWS_*
+      # estiverem completos, o thumbprint entra no MESMO JSON — um único
+      # --config na chamada do build (nunca dois --config).
+      # Nenhum secret é exportado como variável vazia: o bundler da Tauri usa
+      # var_os() e trataria "" como "presente", quebrando o build.
+      - name: Preparar config de CI (instaladores MSI + NSIS)
+        shell: bash
+        env:
+          _WIN_CERT: ${{ secrets.WINDOWS_CERTIFICATE }}
+          _WIN_PASS: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+          _WIN_THUMB: ${{ secrets.WINDOWS_CERTIFICATE_THUMBPRINT }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "$_WIN_CERT" ] && [ -n "$_WIN_PASS" ] && [ -n "$_WIN_THUMB" ]; then
+            printf '%s' "$_WIN_CERT" | base64 --decode > "$RUNNER_TEMP/opendesign.pfx"
+            PFX_PATH="$RUNNER_TEMP/opendesign.pfx" PFX_PASS="$_WIN_PASS" \
+              powershell -NoProfile -Command 'Import-PfxCertificate -FilePath $env:PFX_PATH -CertStoreLocation Cert:\CurrentUser\My -Password (ConvertTo-SecureString -String $env:PFX_PASS -Force -AsPlainText) | Out-Null'
+            CI_THUMBPRINT="$_WIN_THUMB"
+            export CI_THUMBPRINT
+            echo "::notice::Windows: certificado importado — instaladores serao assinados"
+          else
+            echo "::notice::Windows: secrets de assinatura incompletos — instaladores SEM assinatura"
+          fi
+
+          node <<'NODE'
+          const fs = require('fs');
+          const base = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
+          const bundle = {
+            ...(base.bundle || {}),
+            active: true,
+            targets: ['msi', 'nsis'],
+          };
+          if (process.env.CI_THUMBPRINT) {
+            bundle.windows = {
+              ...(bundle.windows || {}),
+              certificateThumbprint: process.env.CI_THUMBPRINT,
+            };
+          }
+          fs.writeFileSync('src-tauri/ci-build.json', JSON.stringify({ ...base, bundle }, null, 2) + '\n');
+          NODE
+
+          echo "Config de CI gerada: src-tauri/ci-build.json"
+          grep -A6 '"bundle"' src-tauri/ci-build.json
+
+      - name: Diagnóstico (melhor esforço)
+        continue-on-error: true
+        run: pnpm tauri info
+
+      # tauri-action faz o build com UM único --config e publica os bundles
+      # MSI + NSIS como artifacts do workflow. Release só em push de tag v*.
+      - name: Build e upload dos instaladores
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1 (commit de v1^{})
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: ./
+          tauriScript: pnpm tauri
+          # Release SOMENTE em push de tag v*. No disparo manual, tagName e
+          # releaseName ficam vazios: o tauri-action não cria release e apenas
+          # anexa os bundles como workflow artifacts.
+          tagName: ${{ github.event_name == 'push' && github.ref_name || '' }}
+          releaseName: ${{ github.event_name == 'push' && format('OpenDesign {0}', github.ref_name) || '' }}
+          releaseBody: 'Instaladores MSI e NSIS do OpenDesign gerados a partir da tag — RASCUNHO, revisar antes de publicar.'
+          releaseDraft: true
+          prerelease: false
+          # Updater não está configurado em tauri.conf.json.
+          uploadUpdaterJson: false
+          uploadWorkflowArtifacts: true
+          # beforeBuildCommand (pnpm build) vem do config base herdado.
+          # UM único --config; nunca repetir a flag na mesma chamada.
+          args: --config src-tauri/ci-build.json

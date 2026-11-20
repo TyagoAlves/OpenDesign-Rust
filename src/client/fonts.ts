@@ -73,20 +73,20 @@ export async function loadCustomFont(font: CustomFont) {
 }
 
 export async function importCustomFont(file: File): Promise<CustomFont> {
-  if (!/\.(ttf|otf|woff2?)$/i.test(file.name)) throw new Error("Choose a TTF, OTF, WOFF or WOFF2 font file.");
-  if (!file.size || file.size > 10 * 1024 * 1024) throw new Error("Fonts must be between 1 byte and 10 MB.");
+  if (!/\.(ttf|otf|woff2?)$/i.test(file.name)) throw new Error("Escolha um arquivo de fonte TTF, OTF, WOFF ou WOFF2.");
+  if (!file.size || file.size > 10 * 1024 * 1024) throw new Error("Fontes devem ter entre 1 byte e 10 MB.");
   // Decode before saving, so a broken font never enters the shared library.
   let face: FontFace;
   try {
     face = await new FontFace("Custom-preview", await file.arrayBuffer()).load();
   } catch {
-    throw new Error("That file could not be decoded as a font.");
+    throw new Error("Não foi possível decodificar esse arquivo como uma fonte.");
   }
   const form = new FormData();
   form.append("file", file);
   const response = await fetch("/api/fonts", { method: "POST", body: form });
   const font = await response.json();
-  if (!response.ok) throw new Error(font.error || "Could not save the font.");
+  if (!response.ok) throw new Error(font.error || "Não foi possível salvar a fonte.");
   face.family = font.family;
   document.fonts.add(face);
   return font;
@@ -107,7 +107,7 @@ export function useFonts() {
         const loaded = await Promise.allSettled(fonts.map(loadCustomFont));
         setCustomFonts(fonts.filter((_, i) => loaded[i].status === "fulfilled"));
       } catch {
-        setFontsError("Could not load the fonts. Reload to try again.");
+        setFontsError("Não foi possível carregar as fontes. Recarregue para tentar novamente.");
       } finally {
         setFontsLoading(false);
       }

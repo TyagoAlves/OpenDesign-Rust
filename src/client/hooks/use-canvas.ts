@@ -8,9 +8,9 @@ import { downloadDataURL, exportPagesToPDF, renderPageToPNG, slugify } from "../
 const MAX_HISTORY = 50;
 
 const TEXT_PRESETS = {
-  heading: { text: "Add a heading", fontSize: 48, fontWeight: "700", fontFamily: "Montserrat" },
-  subheading: { text: "Add a subheading", fontSize: 32, fontWeight: "500", fontFamily: "Inter" },
-  body: { text: "Add body text", fontSize: 18, fontWeight: "400", fontFamily: "Inter" },
+  heading: { text: "Adicionar um título", fontSize: 48, fontWeight: "700", fontFamily: "Montserrat" },
+  subheading: { text: "Adicionar um subtítulo", fontSize: 32, fontWeight: "500", fontFamily: "Inter" },
+  body: { text: "Adicionar texto de corpo", fontSize: 18, fontWeight: "400", fontFamily: "Inter" },
 } as const;
 
 const SHAPE_DEFAULTS = {
@@ -267,7 +267,7 @@ export function useCanvasState(onChange: () => void = () => {}) {
         canvas.setActiveObject(img);
         canvas.requestRenderAll();
       } catch (e) {
-        console.error("Failed to load image:", e);
+        console.error("Falha ao carregar a imagem:", e);
       }
     },
     [getActiveCanvas, canvasWidth, canvasHeight]
@@ -530,7 +530,7 @@ export function useCanvasState(onChange: () => void = () => {}) {
       try {
         await exportPagesToPDF(canvases, canvasWidth, canvasHeight, `${slugify(designName)}.pdf`);
       } catch (e) {
-        console.error("Failed to export PDF:", e);
+        console.error("Falha ao exportar o PDF:", e);
       } finally {
         setExporting(false);
       }

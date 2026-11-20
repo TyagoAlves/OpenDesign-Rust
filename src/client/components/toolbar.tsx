@@ -119,7 +119,7 @@ export function Toolbar() {
         <button
           class="p-1.5 rounded-md text-zinc-400 bg-transparent border-none cursor-pointer transition-all hover:bg-zinc-100 hover:text-zinc-900"
           onClick={() => navigate("/")}
-          title="Back to designs"
+          title="Voltar aos projetos"
         >
           <Home size={16} />
         </button>
@@ -187,12 +187,12 @@ export function Toolbar() {
 
                 <div class="mt-1 pt-2 border-t border-zinc-200 px-3 pb-1">
                   <div class="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
-                    Custom
+                    Personalizado
                   </div>
                   <div class="flex items-center gap-1.5">
                     <input
                       type="number"
-                      aria-label="Custom width in pixels"
+                      aria-label="Largura personalizada em pixels"
                       class="w-[68px] bg-zinc-100 border border-zinc-300 rounded px-2 py-1 text-xs text-zinc-900 outline-none focus:border-accent"
                       value={customWidth}
                       min={MIN_CANVAS_SIDE}
@@ -203,7 +203,7 @@ export function Toolbar() {
                     <span class="text-zinc-400 text-xs">x</span>
                     <input
                       type="number"
-                      aria-label="Custom height in pixels"
+                      aria-label="Altura personalizada em pixels"
                       class="w-[68px] bg-zinc-100 border border-zinc-300 rounded px-2 py-1 text-xs text-zinc-900 outline-none focus:border-accent"
                       value={customHeight}
                       min={MIN_CANVAS_SIDE}
@@ -215,7 +215,7 @@ export function Toolbar() {
                       class="px-2.5 py-1 rounded text-xs font-medium text-white bg-accent border-none cursor-pointer hover:opacity-90 transition-opacity"
                       onClick={applyCustomSize}
                     >
-                      Resize
+                      Redimensionar
                     </button>
                   </div>
                 </div>
@@ -228,10 +228,10 @@ export function Toolbar() {
           <button
             class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-zinc-500 bg-transparent border border-zinc-300 cursor-pointer hover:text-zinc-900 hover:border-zinc-500 transition-all"
             onClick={undoResize}
-            title="Restore the previous size and layout"
+            title="Restaurar o tamanho e o layout anteriores"
           >
             <RotateCcw size={11} />
-            Undo resize
+            Desfazer redimensionamento
           </button>
         )}
       </div>
@@ -242,7 +242,7 @@ export function Toolbar() {
           class="p-1.5 rounded-md text-zinc-400 bg-transparent border-none cursor-pointer transition-all hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed"
           onClick={undo}
           disabled={!canUndo}
-          title="Undo (Cmd+Z)"
+          title="Desfazer (Ctrl+Z)"
         >
           <Undo2 size={16} />
         </button>
@@ -250,7 +250,7 @@ export function Toolbar() {
           class="p-1.5 rounded-md text-zinc-400 bg-transparent border-none cursor-pointer transition-all hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:cursor-not-allowed"
           onClick={redo}
           disabled={!canRedo}
-          title="Redo (Cmd+Shift+Z)"
+          title="Refazer (Ctrl+Shift+Z)"
         >
           <Redo2 size={16} />
         </button>
@@ -261,7 +261,7 @@ export function Toolbar() {
         <button
           class="p-1.5 rounded-md text-zinc-400 bg-transparent border-none cursor-pointer transition-all hover:bg-zinc-100 hover:text-zinc-900"
           onClick={zoomOut}
-          title="Zoom out"
+          title="Diminuir zoom"
         >
           <ZoomOut size={15} />
         </button>
@@ -271,14 +271,14 @@ export function Toolbar() {
         <button
           class="p-1.5 rounded-md text-zinc-400 bg-transparent border-none cursor-pointer transition-all hover:bg-zinc-100 hover:text-zinc-900"
           onClick={zoomIn}
-          title="Zoom in"
+          title="Aumentar zoom"
         >
           <ZoomIn size={15} />
         </button>
         <button
           class="p-1.5 rounded-md text-zinc-400 bg-transparent border-none cursor-pointer transition-all hover:bg-zinc-100 hover:text-zinc-900"
           onClick={zoomToFit}
-          title="Fit to screen"
+          title="Ajustar à tela"
         >
           <Maximize size={15} />
         </button>
@@ -290,10 +290,10 @@ export function Toolbar() {
             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-semibold border border-zinc-300 cursor-pointer transition-all bg-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-50"
             onClick={() => setShowExportMenu(!showExportMenu)}
             disabled={exporting || !activeDesign}
-            title="Export this design"
+            title="Exportar este projeto"
           >
             {exporting ? <span class="spinner" /> : <Download size={13} />}
-            {exporting ? "Preparing..." : "Export"}
+            {exporting ? "Preparando…" : "Exportar"}
             <ChevronDown size={12} />
           </button>
           {showExportMenu && (
@@ -306,9 +306,9 @@ export function Toolbar() {
                 >
                   <FileText size={14} class="mt-0.5 shrink-0 text-accent" />
                   <span>
-                    <span class="block font-medium text-zinc-900">Carousel PDF</span>
+                    <span class="block font-medium text-zinc-900">PDF de carrossel</span>
                     <span class="block text-[10px] text-zinc-400">
-                      All {pages.length} {pages.length === 1 ? "page" : "pages"}, ready for LinkedIn
+                      {pages.length} {pages.length === 1 ? "página, pronta" : "páginas, prontas"} para o LinkedIn
                     </span>
                   </span>
                 </button>
@@ -318,8 +318,8 @@ export function Toolbar() {
                 >
                   <ImageIcon size={14} class="mt-0.5 shrink-0 text-zinc-400" />
                   <span>
-                    <span class="block font-medium text-zinc-900">This page</span>
-                    <span class="block text-[10px] text-zinc-400">PNG at 2x</span>
+                    <span class="block font-medium text-zinc-900">Esta página</span>
+                    <span class="block text-[10px] text-zinc-400">PNG em 2x</span>
                   </span>
                 </button>
                 {pages.length > 1 && (
@@ -329,8 +329,8 @@ export function Toolbar() {
                   >
                     <Images size={14} class="mt-0.5 shrink-0 text-zinc-400" />
                     <span>
-                      <span class="block font-medium text-zinc-900">All pages</span>
-                      <span class="block text-[10px] text-zinc-400">{pages.length} separate PNGs at 2x</span>
+                      <span class="block font-medium text-zinc-900">Todas as páginas</span>
+                      <span class="block text-[10px] text-zinc-400">{pages.length} PNGs separados em 2x</span>
                     </span>
                   </button>
                 )}
@@ -339,7 +339,7 @@ export function Toolbar() {
           )}
         </div>
         {activeDesign && (
-          <label class="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 whitespace-nowrap cursor-pointer" title="Save changes automatically after a short pause">
+          <label class="inline-flex items-center gap-1.5 text-[11px] text-zinc-500 whitespace-nowrap cursor-pointer" title="Salvar alterações automaticamente após uma breve pausa">
             <input
               type="checkbox"
               checked={autoSave}
@@ -348,12 +348,12 @@ export function Toolbar() {
                 if (e.currentTarget.checked) void saveDesign();
               }}
             />
-            Auto-save
+            Salvamento automático
           </label>
         )}
         {activeDesign && (
           <span class={`text-[10px] whitespace-nowrap ${saveStatus === "error" ? "text-red-500" : "text-zinc-400"}`} aria-live="polite">
-            {saveStatus === "pending" ? "Unsaved changes" : saveStatus === "saving" ? "Saving…" : saveStatus === "error" ? "Save failed" : autoSave ? "All changes saved" : ""}
+            {saveStatus === "pending" ? "Alterações não salvas" : saveStatus === "saving" ? "Salvando…" : saveStatus === "error" ? "Falha ao salvar" : autoSave ? "Todas as alterações salvas" : ""}
           </span>
         )}
         <button
@@ -362,7 +362,7 @@ export function Toolbar() {
           disabled={saving || !activeDesign}
         >
           {saving ? <span class="spinner !border-white/30 !border-t-white" /> : <Save size={13} />}
-          {saving ? "Saving..." : "Save"}
+          {saving ? "Salvando…" : "Salvar"}
         </button>
       </div>
     </div>

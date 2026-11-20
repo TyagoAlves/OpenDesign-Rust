@@ -1,5 +1,8 @@
 node_modules/
 dist/
+# Artefatos Rust: o workspace Cargo gera OpenDesign/target/ (o /target/ do
+# src-tauri/.gitignore só cobre src-tauri/target/).
+target/
 data.db
 data.db-wal
 data.db-shm
@@ -7,3 +10,7 @@ uploads/
 .env
 .wrangler/
 .test-build/
+# Logs e builds stale: o binario canonico e Release/OpenDesign.exe.
+*.log
+/Release/*.bak
+/Release/*-FRESH-*.exe

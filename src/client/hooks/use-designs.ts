@@ -29,6 +29,14 @@ export function useDesigns(
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const designLoadRef = useRef(0);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  // Uma falha de persistência precisa aparecer na UI: no build desktop o
+  // console do webview não fica visível para o usuário/QA.
+  const [error, setError] = useState<string | null>(null);
+  const clearError = useCallback(() => setError(null), []);
+  const reportFailure = useCallback((message: string, cause: unknown) => {
+    console.error(`[use-designs] ${message}`, cause);
+    setError(`${message} ${cause instanceof Error ? cause.message : String(cause)}`);
+  }, []);
   const updatePages = useCallback((next: Page[] | ((pages: Page[]) => Page[])) => {
     const updated = typeof next === "function" ? next(pagesRef.current) : next;
     pagesRef.current = updated;
@@ -51,7 +59,7 @@ export function useDesigns(
         setDesigns(d);
         setTemplates(t);
       } catch (e) {
-        console.error("Failed to load data:", e);
+        reportFailure("Não foi possível carregar os projetos.", e);
       } finally {
         setLoading(false);
       }
@@ -79,7 +87,7 @@ export function useDesigns(
           updatePages((prev) => prev.map((p) => (p.id === updatedPage.id ? updatedPage : p)));
         } catch (e) {
           // A page deleted while this save was in flight is already safely gone.
-          if (!(e instanceof Error && e.message === "Not found")) throw e;
+          if (!(e instanceof Error && e.message === "Não encontrado")) throw e;
         }
       }
       // Also update design's canvas_json with first page for backwards compat
@@ -103,12 +111,12 @@ export function useDesigns(
         setSaveStatus("saved");
       }
     } catch (e) {
-      console.error("Failed to save:", e);
+      reportFailure("Não foi possível salvar o projeto.", e);
       if (activeIdRef.current === designId) setSaveStatus("error");
     } finally {
       setSaving(false);
     }
-  }, [getCanvasJSONForPage, getCanvasSize, updatePages]);
+  }, [getCanvasJSONForPage, getCanvasSize, updatePages, reportFailure]);
 
   // One save at a time. Two overlapping saves can land their page writes out
   // of order, and the older snapshot would overwrite the newer one.
@@ -121,15 +129,16 @@ export function useDesigns(
   const createDesign = useCallback(async (): Promise<string | undefined> => {
     try {
       const d = await api<Design>("POST", "/api/designs", {
-        name: "Untitled Design",
+        name: "Projeto sem título",
         canvas_json: "{}",
       });
+      clearError();
       setDesigns((prev) => [d, ...prev]);
       return d.id;
     } catch (e) {
-      console.error("Failed to create design:", e);
+      reportFailure("Não foi possível criar o projeto.", e);
     }
-  }, []);
+  }, [clearError, reportFailure]);
 
   const createFromTemplate = useCallback(async (template: Template): Promise<string | undefined> => {
     try {
@@ -139,12 +148,13 @@ export function useDesigns(
         width: template.width,
         height: template.height,
       });
+      clearError();
       setDesigns((prev) => [d, ...prev]);
       return d.id;
     } catch (e) {
-      console.error("Failed to create from template:", e);
+      reportFailure("Não foi possível criar o projeto a partir do modelo.", e);
     }
-  }, []);
+  }, [clearError, reportFailure]);
 
   const loadDesign = useCallback(
     async (id: string) => {
@@ -162,10 +172,10 @@ export function useDesigns(
           setActivePageId(null);
         }
       } catch (e) {
-        console.error("Failed to load design:", e);
+        reportFailure("Não foi possível abrir o projeto.", e);
       }
     },
-    [updatePages]
+    [updatePages, reportFailure]
   );
 
   const deleteDesign = useCallback(async (id: string) => {
@@ -181,9 +191,9 @@ export function useDesigns(
         updatePages([]);
       }
     } catch (e) {
-      console.error("Failed to delete:", e);
+      reportFailure("Não foi possível excluir o projeto.", e);
     }
-  }, [updatePages]);
+  }, [updatePages, reportFailure]);
 
   const renameDesign = useCallback(async (id: string, name: string) => {
     try {
@@ -191,9 +201,9 @@ export function useDesigns(
       setDesigns((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
       if (activeIdRef.current === id) setActiveDesign(updated);
     } catch (e) {
-      console.error("Failed to rename:", e);
+      reportFailure("Não foi possível renomear o projeto.", e);
     }
-  }, []);
+  }, [reportFailure]);
 
   // ── Page management ─────────────────────────────────────────────────
 
@@ -211,9 +221,9 @@ export function useDesigns(
       updatePages(d.pages);
       setActivePageId(page.id);
     } catch (e) {
-      console.error("Failed to add page:", e);
+      reportFailure("Não foi possível adicionar a página.", e);
     }
-  }, [pages, updatePages]);
+  }, [pages, updatePages, reportFailure]);
 
   const duplicatePage = useCallback(
     async (pageId: string) => {
@@ -222,8 +232,10 @@ export function useDesigns(
       if (json && json !== "{}") {
         try {
           await api<Page>("PUT", `/api/pages/${pageId}`, { canvas_json: json });
-        } catch {
-          // best effort
+        } catch (e) {
+          // Best effort: a duplicação ainda tenta seguir; registra no console
+          // para não engolir a falha silenciosamente.
+          console.warn("[use-designs] falha ao salvar rascunho antes de duplicar:", e);
         }
       }
       try {
@@ -235,10 +247,10 @@ export function useDesigns(
         }
         setActivePageId(page.id);
       } catch (e) {
-        console.error("Failed to duplicate page:", e);
+        reportFailure("Não foi possível duplicar a página.", e);
       }
     },
-    [getCanvasJSONForPage, updatePages]
+    [getCanvasJSONForPage, updatePages, reportFailure]
   );
 
   const deletePage = useCallback(
@@ -251,10 +263,10 @@ export function useDesigns(
           setActivePageId(remaining[0].id);
         }
       } catch (e) {
-        console.error("Failed to delete page:", e);
+        reportFailure("Não foi possível excluir a página.", e);
       }
     },
-    [pages, updatePages]
+    [pages, updatePages, reportFailure]
   );
 
   const renamePage = useCallback(async (pageId: string, title: string) => {
@@ -262,9 +274,9 @@ export function useDesigns(
       const updated = await api<Page>("PUT", `/api/pages/${pageId}`, { title });
       updatePages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     } catch (e) {
-      console.error("Failed to rename page:", e);
+      reportFailure("Não foi possível renomear a página.", e);
     }
-  }, [updatePages]);
+  }, [updatePages, reportFailure]);
 
   // switchToPage is now just scrolling + activating — handled by CanvasArea/PagesBar
   const switchToPage = useCallback((pageId: string) => {
@@ -307,6 +319,8 @@ export function useDesigns(
     loading,
     saving,
     saveStatus,
+    error,
+    clearError,
     autoSave,
     setAutoSave,
     createDesign,

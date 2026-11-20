@@ -1,4 +1,5 @@
 import type * as fabric from "fabric";
+import { dataURLKind, isTauri, pickSavePath, saveDataURLNative } from "./tauri-bridge";
 
 /** Every export renders at 2x the design size: crisp in a feed, still light enough to upload. */
 export const EXPORT_SCALE = 2;
@@ -20,7 +21,38 @@ export function renderPageToPNG(canvas: fabric.Canvas, scale = EXPORT_SCALE): st
   return canvas.toDataURL({ format: "png", multiplier: scale / canvas.getZoom(), quality: 1 });
 }
 
-export function downloadDataURL(dataURL: string, filename: string) {
+/**
+ * No desktop, abre o diálogo nativo "Salvar como" e grava no destino escolhido
+ * via Rust. Se o usuário cancelar, nada é salvo. Se o diálogo não estiver
+ * disponível (permissão/plugin ausente), cai para o antigo app data dir/exports.
+ * No browser continua sendo o download por <a download> de sempre.
+ */
+export async function downloadDataURL(dataURL: string, filename: string): Promise<void> {
+  if (isTauri()) {
+    const kind = dataURLKind(dataURL);
+    if (kind) {
+      const picked = await pickSavePath(filename, kind);
+      if (picked.ok) {
+        if (!picked.path) return; // usuário cancelou o diálogo
+        try {
+          const saved = await saveDataURLNative(dataURL, filename, picked.path, picked.nonce);
+          if (saved) return;
+          console.error("Export nativo não retornou resultado; nada foi salvo.");
+        } catch (e) {
+          console.error("Falha ao salvar no destino escolhido:", e);
+        }
+        return;
+      }
+      // Diálogo indisponível: preserva o fallback antigo em app data dir.
+      console.warn("Diálogo 'Salvar como' indisponível, usando fallback:", picked.reason);
+      try {
+        const saved = await saveDataURLNative(dataURL, filename);
+        if (saved) return;
+      } catch (e) {
+        console.error("Export nativo falhou; usando download do browser:", e);
+      }
+    }
+  }
   const link = document.createElement("a");
   link.download = filename;
   link.href = dataURL;
@@ -69,5 +101,11 @@ export async function exportPagesToPDF(
   filename: string,
 ) {
   const doc = await buildCarouselPDF(canvases, width, height);
+  if (isTauri()) {
+    // jsPDF.save() depende de <a download> do browser; no desktop o arquivo
+    // precisa ir para o disco pelo comando Rust. Fora do desktop, nada muda.
+    await downloadDataURL(doc.output("dataurlstring"), filename);
+    return;
+  }
   doc.save(filename);
 }

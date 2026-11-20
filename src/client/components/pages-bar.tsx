@@ -96,7 +96,7 @@ export function PagesBar() {
         onClick={() => setExpanded(!expanded)}
       >
         <span class="text-[11px] text-zinc-400 font-medium">
-          Pages ({pages.length})
+          Páginas ({pages.length})
         </span>
         {expanded ? (
           <ChevronDown size={14} class="text-zinc-400" />
@@ -168,7 +168,7 @@ export function PagesBar() {
                       onClick={() => startRename(page.id, page.title)}
                     >
                       <Pencil size={12} />
-                      Rename
+                      Renomear
                     </button>
                     <button
                       class="w-full text-left px-3 py-1.5 text-xs text-zinc-600 bg-transparent border-none cursor-pointer hover:bg-zinc-100 flex items-center gap-2"
@@ -178,7 +178,7 @@ export function PagesBar() {
                       }}
                     >
                       <Copy size={12} />
-                      Duplicate
+                      Duplicar
                     </button>
                     {pages.length > 1 && (
                       <button
@@ -189,7 +189,7 @@ export function PagesBar() {
                         }}
                       >
                         <Trash2 size={12} />
-                        Delete
+                        Excluir
                       </button>
                     )}
                   </div>
@@ -201,7 +201,7 @@ export function PagesBar() {
           <button
             class="flex-shrink-0 flex items-center justify-center w-10 h-[62px] rounded-lg border-2 border-dashed border-zinc-300 bg-transparent cursor-pointer transition-all hover:border-[#6366f1] hover:bg-[#6366f1]/5"
             onClick={() => addPage()}
-            title="Add page"
+            title="Adicionar página"
           >
             <Plus size={16} class="text-zinc-400" />
           </button>

@@ -56,9 +56,9 @@ export function Home({
       <div class="bg-white border-b border-zinc-200">
         <div class="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
           <div>
-            <h1 class="text-lg font-bold text-zinc-800 m-0">My Designs</h1>
+            <h1 class="text-lg font-bold text-zinc-800 m-0">Meus projetos</h1>
             <p class="text-xs text-zinc-400 mt-0.5 m-0">
-              {designs.length} design{designs.length !== 1 ? "s" : ""}
+              {designs.length} projeto{designs.length !== 1 ? "s" : ""}
             </p>
           </div>
           <button
@@ -66,7 +66,7 @@ export function Home({
             onClick={handleCreate}
           >
             <Plus size={15} />
-            New Design
+            Novo projeto
           </button>
         </div>
       </div>
@@ -77,7 +77,7 @@ export function Home({
           <div class="mb-8">
             <div class="flex items-center gap-2 mb-3">
               <Sparkles size={14} class="text-[#6366f1]" />
-              <h2 class="text-sm font-semibold text-zinc-700 m-0">Start from a template</h2>
+              <h2 class="text-sm font-semibold text-zinc-700 m-0">Comece por um modelo</h2>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {templates.map((t) => (
@@ -93,19 +93,19 @@ export function Home({
             <div class="w-16 h-16 rounded-2xl bg-zinc-200 flex items-center justify-center mx-auto mb-4">
               <Plus size={24} class="text-zinc-400" />
             </div>
-            <p class="text-sm text-zinc-500 mb-1">No designs yet</p>
-            <p class="text-xs text-zinc-400 mb-4">Create your first design to get started</p>
+            <p class="text-sm text-zinc-500 mb-1">Nenhum projeto ainda</p>
+            <p class="text-xs text-zinc-400 mb-4">Crie seu primeiro projeto para começar</p>
             <button
               class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border-none cursor-pointer bg-[#6366f1] text-white hover:bg-[#5558e6] transition-all"
               onClick={handleCreate}
             >
               <Plus size={14} />
-              Create Design
+              Criar projeto
             </button>
           </div>
         ) : (
           <>
-            <h2 class="text-sm font-semibold text-zinc-700 mb-3 m-0">Recent designs</h2>
+            <h2 class="text-sm font-semibold text-zinc-700 mb-3 m-0">Projetos recentes</h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {designs.map((d) => (
                 <div

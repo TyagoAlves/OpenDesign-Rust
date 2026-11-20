@@ -41,14 +41,14 @@ const FONT_TYPES: Record<string, { signature: number; mime: string }> = {
 export async function storeFont(bucket: typeof _bucket, file: File) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
   const format = FONT_TYPES[ext];
-  if (!format) throw new TypeError("Choose a TTF, OTF, WOFF or WOFF2 font file.");
-  if (!file.size || file.size > 10 * 1024 * 1024) throw new TypeError("Fonts must be between 1 byte and 10 MB.");
+  if (!format) throw new TypeError("Escolha um arquivo de fonte TTF, OTF, WOFF ou WOFF2.");
+  if (!file.size || file.size > 10 * 1024 * 1024) throw new TypeError("Fontes devem ter entre 1 byte e 10 MB.");
   const data = await file.arrayBuffer();
   if (data.byteLength < 12 || new DataView(data).getUint32(0) !== format.signature) {
-    throw new TypeError("That file is not a valid font of the selected type.");
+    throw new TypeError("Esse arquivo não é uma fonte válida do tipo selecionado.");
   }
   const family = `Custom-${crypto.randomUUID()}`;
-  const name = file.name.replace(/\.[^.]+$/, "").replace(/[\x00-\x1f\x7f]/g, "").trim().slice(0, 100) || "Custom font";
+  const name = file.name.replace(/\.[^.]+$/, "").replace(/[\x00-\x1f\x7f]/g, "").trim().slice(0, 100) || "Fonte personalizada";
   const key = `font-${family}.${ext}`;
   await bucket.put(key, data, {
     httpMetadata: { contentType: format.mime },

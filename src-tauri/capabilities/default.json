@@ -1,0 +1,16 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "enables the default permissions",
+  "windows": [
+    "main",
+    "splashscreen"
+  ],
+  "permissions": [
+    "core:default",
+    "dialog:allow-save",
+    "sql:allow-execute",
+    "sql:allow-load",
+    "sql:allow-select"
+  ]
+}
