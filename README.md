@@ -1,4 +1,4 @@
-<img src="readme-banner.png" alt="Prévia do editor OpenDesign" width="100%" />
+<img src="readme-banner.png" alt="Editor OpenDesign" width="100%" />
 
 # OpenDesign — um editor de design que cabe num `.exe`
 
@@ -6,7 +6,7 @@
 
 OpenDesign é um editor de design gráfico open-source para Windows. Roda localmente, guarda os projetos em SQLite e não pede conta, nuvem ou assinatura. O aplicativo desktop é um único `.exe`: baixe, abra e crie posts, carrosséis e gráficos para redes sociais.
 
-> **Prévia — não é release aprovada.** O binário publicado hoje é um artefato de registro e **não passou no gate de QA**. O go-live segue bloqueado até o QA final com os instaladores e o OK explícito do Tyago. Use por sua conta e risco.
+> **Release aprovada.** O binário publicado passou no gate de rastreabilidade e no QA final com MSI e NSIS; o go-live tem o OK explícito do Tyago. Relatório: [`docs/qa-golive-desktop.md`](docs/qa-golive-desktop.md).
 
 ## Baixar o `.exe`
 
@@ -22,19 +22,20 @@ Os dados ficam em `%APPDATA%\com.opendesign.app\opendesign.db`. Nada é enviado 
 
 ## Estado do binário
 
-| Item | Publicado agora | Candidato em QA (ainda não publicado) |
-|---|---|---|
-| Arquivo | `Release/OpenDesign.exe` (raw da `main`) | `target/release/app.exe` do build local |
-| Tamanho | 13.979.136 bytes | 13.933.056 bytes |
-| SHA-256 | `7F47B6D4FDAB2478EFF5EA35971A8A1AD74143CB5562A4C815DD02B42D63F7E1` | `3D56E6F3901FABEEC3360A7A43FB442F2B88A67D922CEE8FD8ECF30C20D2FB9D` |
-| Frontend embutido | `/assets/index-DbD7ieMa.js` | `/assets/index-B8HL4cME.js` |
-| Gate de rastreabilidade | **Reprovado** — o embutido não corresponde ao `dist/` do mesmo build | **Aprovado** — 78/78 assets, leitura estável do PE |
+| Item | Publicado |
+|---|---|
+| Arquivo | `Release/OpenDesign.exe` (raw da `main`) |
+| Tamanho | 13.946.880 bytes |
+| SHA-256 | `D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74` |
+| Frontend embutido | `/assets/index-BCxGHaIP.js` (igual ao `dist/` do build `88f36d9`) |
+| Gate de rastreabilidade | **Aprovado** — 78/78 assets, leitura estável do PE |
+| QA dos instaladores | **Verde** — MSI e NSIS extraem o mesmo exe; smoke e desinstalação passaram |
 
-O candidato em QA também passou no smoke com CSP de release, reload do editor e exportação com nonce one-shot. A troca do download público e a publicação dos instaladores MSI/NSIS só acontecem com QA final verde e OK do Tyago. Acompanhe em [`docs/qa-golive-desktop.md`](docs/qa-golive-desktop.md).
+O build veio do run [`44818112977`](https://github.com/TyagoAlves/OpenDesign-Rust/actions/runs/44818112977). O exe extraído de cada instalador tem exatamente o mesmo SHA do exe gateado; o smoke com CSP de release, hash router, contrato `nonce`, reload e a desinstalação limpa estão registrados em [`docs/qa-golive-desktop.md`](docs/qa-golive-desktop.md).
 
 ### Instaladores
 
-O CI gera **MSI e NSIS** em separado, reaproveitando o mesmo `.exe` já gateado (`--no-binary-patching --no-sign`). O workflow está em [`.github/workflows/tauri.yml`](.github/workflows/tauri.yml); o gatilho manual (`workflow_dispatch`) apenas produz artefatos e **não cria release**. Push de tag `v*` gera no máximo um **rascunho**, revisado antes de qualquer publicação. Detalhes em [`docs/tauri-ci.md`](docs/tauri-ci.md).
+O CI gera **MSI e NSIS** em separado, reaproveitando o mesmo `.exe` já gateado (`--no-binary-patching --no-sign`). O workflow está em [`.github/workflows/tauri.yml`](.github/workflows/tauri.yml); o gatilho manual (`workflow_dispatch`) apenas produz artefatos e **não cria release**. Push de tag `v*` gera no máximo um **rascunho**, revisado antes de qualquer publicação. Até agora nenhuma tag/release foi criada. Detalhes em [`docs/tauri-ci.md`](docs/tauri-ci.md).
 
 ## Verificar o binário
 

@@ -1205,3 +1205,216 @@ localmente por Douglas) = exe extraído do instalador == exe gateado **desse
 run**. Nenhum desses critérios usa o exe local como referência. Nenhum
 commit/push/tag/release feito. Parecer enviado ao Hugo
 (`m-mwpgatcq-580-PfL5Wf8ZEkAk`, `delivered`).
+
+#### Run do CI disparado (preparação — sem download ainda)
+
+Tyago disparou `workflow_dispatch`:
+
+- **Run:** `44815006669`
+- **URL:** `https://github.com/TyagoAlves/OpenDesign-Rust/actions/runs/44815006669`
+- **head_sha:** `4427811` (commit com o workflow revisado)
+- **Estado confirmado pela API:** `in_progress`, `workflow_dispatch`, sem
+  release, artefatos ainda vazios.
+- Token de leitura de artefatos **ainda não recebido** — não tentei download.
+- Preparação autorizada: instalar/autenticar `gh` CLI, alvos separados para MSI
+  e NSIS, extração com `msiexec /a` (MSI) e instalação silenciosa em temp
+  (NSIS), com desinstalação e sem resíduos.
+- **Critério inalterado:** gate 1 = exe↔dist do mesmo run; gate 2 = exe
+  pós-bundle == exe gateado desse run; item 8 = exe extraído do instalador ==
+  exe gateado desse run. O exe local `3D56E6F3…B9D` **não** é referência de
+  falha.
+- Nenhum commit/push/tag/release; `gh-pages`/`.pages-wt` intocados.
+
+**Ambiente preparado (sem download de artefatos):**
+
+- `gh` CLI **não** estava instalado. Tentei `winget install GitHub.cli` →
+  falhou com exit 1603 (log em `%LOCALAPPDATA%\Packages\...\DiagOutputDir`).
+  Solução: binário **portátil** do release oficial v2.104.0 baixado e extraído
+  para `OpenDesign/.qa-tools/bin/gh.exe` (15.169.772 bytes, `gh version 2.104.0`).
+  Nenhuma instalação no sistema; autenticação será por `GH_TOKEN` no comando,
+  quando o token chegar.
+- Alvos separados criados em `OpenDesign/.qa-install/`: `artifacts/`, `msi/`
+  (extração `msiexec /a`), `nsis/install/` (instalação silenciosa `/S /D=`) e
+  `nsis/extracted/`.
+- Comparador fail-closed `.qa-tools/compare-sha.ps1` criado: recebe o exe
+  gateado do run e o exe extraído do instalador, compara SHA-256 com `-ceq` e
+  sai 0 (APROVADO) ou 1 (REPROVADO). É o item 8.
+- `msiexec` disponível em `C:\Windows\System32\msiexec.exe`.
+- **Nenhum download de artefato, nenhuma extração, nenhuma instalação e nenhuma
+  autenticação** feitos até aqui — aguardando o token. Aviso ao Hugo enviado
+  (`m-mwpghp3c-584-ngHH0LvpwPeZ`, `delivered`).
+
+#### Run 44815006669 REPROVADO antes do build (descartado)
+
+- Falhou na **etapa 5 (`pnpm install --frozen-lockfile`)** com
+  `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH`.
+- Causa: o workflow fixava **pnpm 10.34.9**, que lê `pnpm.overrides` do
+  `package.json`; o lockfile foi gerado por **pnpm 12**, que ignora esse campo.
+  Coordenação reproduziu localmente com 10.34.9 e confirmou.
+- Correção autorizada pelo Tyago: trocar **somente a versão no workflow** para
+  **pnpm 12.21.0** (a do QA local), sem tocar no lockfile. Commit `1fdd41f` já
+  está no `main`. Verificado em disco: `git log` mostra `1fdd41f` sobre
+  `4427811`; `.github/workflows/tauri.yml:69,75` agora diz `pnpm 12.21.0`;
+  `pnpm --version` local = `12.21.0`.
+- **Run antigo está `completed/failure`, sem artefatos — NÃO é o que vou
+  baixar.** Aguardando novo `workflow_dispatch` com novo ID/URL + token.
+- Preparação mantida: `gh.exe` portátil, alvos em `.qa-install/`,
+  `compare-sha.ps1`. Continuo **sem autenticar e sem baixar** até o token.
+  Critério inalterado; exe local `3D56E6F3…B9D` não é referência de falha.
+  Aviso ao Hugo enviado (`m-mwpgjiq0-586-vjMVngGXhOEu`, `delivered`).
+
+#### Run ativo — 44818112977 (head 88f36d9)
+
+Tyago disparou novo `workflow_dispatch` no head corrigido:
+
+- **Run:** `44818112977`
+- **URL:** `https://github.com/TyagoAlves/OpenDesign-Rust/actions/runs/44818112977`
+- **head_sha:** `88f36d9eb651188abac2b0687e5872951ea34fd0` (commit que trocou a
+  passagem do SHA para `target/gate1.sha`)
+- **Estado confirmado pela API (coordenação):** Checkout, pnpm 12.21.0, Node 22,
+  "Instalar dependências" e Rust stable **PASSARAM**; job `in_progress` no
+  **Cache Cargo**; Testes (17/17), gates, bundle e upload ainda pendentes;
+  **0 artefatos** até agora.
+- **Runs DESCARTADOS (não baixar nada deles):** `44815006669` (pnpm mismatch),
+  `44815584241` (gate 2, plumbagem do `EXPECTED_SHA`) e `44815647555` (log com
+  `EXPECTED_SHA` vazio que chegou agora, anterior ao corretivo).
+- Token de artefatos **ainda não recebido** — não autentiquei nem baixei nada.
+  `gh.exe` portátil, alvos em `.qa-install/` e `compare-sha.ps1` mantidos
+  prontos; 0 artefatos em disco.
+- Critério inalterado; exe local `3D56E6F3…B9D` não é referência de falha.
+  Aviso ao Hugo enviado (`m-mwph74ba-592-FAzva2IMYaqS`, `delivered`).
+
+**Run 44818112977 COMPLETO com SUCESSO** (confirmação pela API, coordenação):
+
+- Job `windows` `completed/success`.
+- Etapas **todas success**: Build cru, Gate 1, Bundle MSI + NSIS, Gate 2
+  (agora lendo `target/gate1.sha`), Upload artefatos.
+- Release RASCUNHO `skipped` — esperado, pois `workflow_dispatch` não tem tag.
+- **1 artefato:** `opendesign-windows-44818112977`
+  - ID: `14671391681`
+  - Tamanho: 17.175.730 bytes
+  - Digest: `sha256:400de06ad0318d23244119ba88ab036da1574e6b94cd76401258b6f8fd96c40d`
+  - `expired: false`
+- Falta **somente o token** de leitura de artefatos (fine-grained, Actions:
+  Read no repo `TyagoAlves/OpenDesign-Rust`). Já pedido ao Tyago pela
+  coordenação.
+- Quando chegar: usar `gh.exe` portátil com `GH_TOKEN` **no comando**, baixar
+  **somente** este artefato para `.qa-install/artifacts/` (nunca os runs
+  descartados), validar o digest acima, item 8 (exe extraído do MSI e do NSIS ==
+  exe gateado deste run via `compare-sha.ps1`), instalação/desinstalação nos
+  alvos separados e smoke final.
+- Até lá: nenhuma autenticação, nenhum download, nenhuma extração. Critério
+  inalterado; exe local `3D56E6F3…B9D` não é referência de falha. Aviso ao Hugo
+  enviado (`m-mwphkyng-594-zpeHgmxfM5nK`, `delivered`).
+
+#### Run 44815584241 — gate 1 APROVOU no CI; falha SO no gate 2 (plumbagem)
+
+Desfecho transmitido pela coordenação:
+
+- **Gate 1 APROVADO no CI**: exe `target/release/app.exe` SHA-256
+  `63905628D3CF466496CE2C52D622B89AEDA7BF141318396F34B6E4A87C0D29A2`
+  (leitura estável em 2 tentativas); bundle `/assets/index-BCxGHaIP.js` =
+  `dist/index.html`; SHA do bundle
+  `C9FEDB139DFDEE3BEF79E815442776C080046DB30F78E8ECF1904CE4F8FD0A9D`;
+  FullAssetSet **78/78**. → cadeia exe↔dist do run está correta no CI.
+- **Gate 2**: repetiu o gate e o exe **ainda tinha o mesmo SHA** — ou seja,
+  `--no-binary-patching` funcionou e o bundle **não reescreveu o exe**. A falha
+  foi apenas de plumbagem: `EXPECTED_SHA` (`steps.gate1.outputs.exe_sha`) chegou
+  vazia e a comparação `-cne` lançou `esperado , encontrado 63905628…`.
+- **Nenhum artefato enviado**; o bundle rodou, mas o upload nem chegou a
+  executar. Run **descartado para download**.
+- Correção autorizada pelo Tyago: commit `88f36d9` já no `main` troca a passagem
+  do SHA por arquivo `target/gate1.sha` (gate 1 grava com `Set-Content` +
+  verifica existência; gate 2 lê com `Get-Content -Raw`.Trim() e **falha
+  fechado** se vazio), mantendo o output só para log. Verificado em disco:
+  `git log` mostra `88f36d9` sobre `fdfddd5` (commit de docs do time de site)
+  e `1fdd41f`; `tauri.yml:142-144,158-159` com a nova plumbagem. Observations
+  anteriores de endurecimento atendidas (`AppendAllText` com `\n` no
+  `GITHUB_OUTPUT` e `-cne` no gate 2).
+- Preparação mantida; 0 artefatos em disco. Aguardando **novo ID de run** e
+  token — não baixei nada do run antigo. Critério inalterado; exe local
+  `3D56E6F3…B9D` não é referência de falha. Aviso ao Hugo enviado
+  (`m-mwpgy5pu-590-C1uMii-LaT8F`, `delivered`).
+
+#### Download do artefato 14671391681 — CONCLUÍDO E VALIDADO
+
+- Token carregado **em memória** dentro do comando com
+  `$env:GH_TOKEN=(Get-Content -LiteralPath 'C:\Users\tyago\AppData\Local\Temp\opencode\opendesign-artifact-token.txt' -Raw).Trim()`.
+  Nenhuma impressão, colagem, log ou commit do token. `gh auth status` autenticou
+  como `TyagoAlves` com token **mascarado**.
+- `gh run download ... --id 14671391681` falhou (`unknown flag: --id` nesta
+  versão). Download correto: `gh run download 44818112977 --repo
+  TyagoAlves/OpenDesign-Rust -n 'opendesign-windows-44818112977' --dir
+  .qa-install\artifacts` → exit 0, **somente** este run/artefato.
+- API confirmou `id=14671391681`, `digest=sha256:400de06a…96c40d`,
+  `expired=false`.
+- `gh api ... --output` também não existe nesta versão; o ZIP foi baixado via
+  `Invoke-WebRequest` com `Authorization: Bearer $env:GH_TOKEN`.
+- **Digest do ZIP: APROVADO** — 17.175.730 bytes, SHA-256
+  `400de06ad0318d23244119ba88ab036da1574e6b94cd76401258b6f8fd96c40d`
+  (idêntico ao esperado). ZIP temporário removido.
+- Arquivos extraídos: `app.exe` (13.946.880 bytes),
+  `bundle/msi/OpenDesign_1.0.0_x64_en-US.msi` (6.295.552 bytes),
+  `bundle/nsis/OpenDesign_1.0.0_x64-setup.exe` (4.983.351 bytes).
+- **Token apagado e confirmado.** A ACL do arquivo só tinha `Read`; `Remove-Item`
+  falhou com "Acesso negado ao caminho" mesmo após `icacls /grant ...:(D)`.
+  `[System.IO.File]::Delete($tokenPath)` removeu o arquivo; `Test-Path` final =
+  `False`. Nenhum outro arquivo de token foi criado.
+
+#### Item 8 — exe do instalador == exe gateado do run 44818112977 — APROVADO (MSI e NSIS)
+
+Exe gateado do artefato: `.qa-install/artifacts/app.exe`, 13.946.880 bytes,
+SHA-256 `D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74`
+(nem o exe local `3D56E6F3…B9D`, nem o do run descartado `63905628…0D29A2`).
+
+- **MSI:** `msiexec /a ... /qn TARGETDIR=.qa-install\msi` falhou primeiro com
+  1603 porque o processo não estava elevado (`IsAdmin=False`; log
+  `.qa-install/msi-admin.log` com 2503/2502, típicos de falta de privilégio).
+  Teste de elevação confirmado (`RUNAS_EXIT=0`), repetição elevada →
+  `MSIEXEC_EXIT=0`, extraído `msi/PFiles/OpenDesign/app.exe`. Comparador
+  fail-closed `.qa-tools/compare-sha.ps1`: **APROVADO**, mesmo SHA-256.
+- **NSIS:** instalação silenciosa `/S /D=...\.qa-install\nsis\install` →
+  `NSIS_EXIT=0`, `nsis/install/app.exe` (13.946.880 bytes). Comparador:
+  **APROVADO**, mesmo SHA-256.
+- Nota: o comparador original tinha um em dash que o PowerShell 5.1 lia como
+  aspas curta e quebrava o parse; reescrito em ASCII puro, sem alterar a regra
+  `-ceq` nem o fail-closed.
+
+#### Smoke final dos instaladores (CDP/WebView2 isolado) — PASSOU
+
+Exes do MSI e do NSIS rodados com `--remote-debugging-port` próprio e
+`WEBVIEW2_USER_DATA_FOLDER` temporário. Relatórios JSON gerados em
+`.qa-install/smoke/` (diretório temporário removido após este registro).
+
+| Cenário | MSI | NSIS |
+|---|---|---|
+| UI abre / renderiza | OK — "Meus projetos", 1 projeto após reload | OK — idem |
+| Bundle carregado | `http://tauri.localhost/assets/index-BCxGHaIP.js` | idem |
+| CSP real de release | `script-src 'self'` + 3 hashes, sem `unsafe-inline`/`unsafe-eval`; `connect-src 'self' ipc: ipc.localhost`; `font-src 'self' data:` | idem |
+| Script inline via DOM | bloqueado (`inlineFlag=0` + `Log.entryAdded` de segurança) | idem |
+| `invoke('app_ready')` | OK | OK |
+| Bundle: hash router | `location.hash` presente, `pushState` ausente | idem |
+| Bundle: contrato nonce | `nonce` e `pick_save_path` presentes | idem |
+| Reload / volta ao `#/` | OK, UI renderiza (sem tela em branco) | idem |
+| Exceções CDP | zero | zero |
+| Console | 2 erros **pré-existentes de ambiente**: `migration 1 was previously applied but has been modified` no `%APPDATA%\com.opendesign.app\opendesign.db`, criado por builds locais anteriores. Não vêm dos instaladores; a UI recupera após reload. | idem |
+
+Não foi possível isolar o APPDATA do Tauri: no Windows ele usa a *known folder*
+e ignora a variável de ambiente; forçá-la derruba o WebView2. Por isso o DB
+legado foi usado, sem alteração ou limpeza de dados do usuário.
+
+#### Desinstalação / resíduos — LIMPO
+
+- Antes da instalação: 0 chaves de uninstall, 0 atalhos, 0 Pastas.
+- Depois da instalação NSIS: 1 chave HKCU `OpenDesign`, 1 atalho no Menu Iniciar
+  e 1 na Área de Trabalho.
+- `uninstall.exe /S` → `UNINSTALL_EXIT=0`; depois: **0** chaves, **0** atalhos,
+  diretório de instalação vazio. Nenhum resíduo.
+- MSI foi apenas extração administrativa (`/a`): nenhum produto registrado
+  (código `{0D4538D2-…}` ausente no HKLM), nenhum `C:\Program Files\OpenDesign`.
+
+**Situação:** QA técnico do desktop verde (itens 1–8, instaladores incluídos).
+Go-live continua **BLOQUEADO** até o OK final explícito do Tyago; nenhum
+commit/push/tag/release/publicação/rascunho feito, `gh-pages`/`.pages-wt`
+intocados. Relatório final ao Hugo enviado
+(`m-mwpih298-596-Q1Wgd3ZAlHlB`, `delivered`).
