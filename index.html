@@ -222,8 +222,8 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
 
 <div class="notice" role="note">
   <div class="wrap notice__inner">
-    <span class="notice__tag">Prévia</span>
-    <span><b>Atenção:</b> o binário oferecido nesta página é um artefato em validação. Ele <b>não passou no gate de QA</b> e <b>não é uma release aprovada</b>. Use por sua conta e risco. O go-live segue não aprovado.</span>
+    <span class="notice__tag">Go-live</span>
+    <span><b>Release aprovada.</b> O binário abaixo passou no gate de rastreabilidade e no QA final dos instaladores MSI e NSIS, com OK do Tyago. Tamanho e SHA-256 conferidos em disco.</span>
   </div>
 </div>
 
@@ -347,10 +347,10 @@ conta / nuvem         <b>← inexistente</b></div>
       <div class="sec-head">
         <span class="eyebrow">Verifique antes de usar</span>
         <h2>Conheça exatamente <em>o que você baixou</em>.</h2>
-        <p>O binário versionado tem 13.979.136 bytes e este SHA-256, conferidos em disco:</p>
+        <p>O binário publicado tem 13.946.880 bytes e este SHA-256, conferidos em disco:</p>
       </div>
-      <div class="code" id="hash">7F47B6D4FDAB2478EFF5EA35971A8A1AD74143CB5562A4C815DD02B42D63F7E1</div>
-      <p style="color:var(--muted);font-size:14px;max-width:760px">O frontend embutido neste artefato é <code style="font:12px var(--mono)">/assets/index-DbD7ieMa.js</code>, que não corresponde ao <code style="font:12px var(--mono)">dist/</code> gerado no mesmo build. Por isso o binário <b>não passa no gate de rastreabilidade</b> e é tratado como prévia. O procedimento de verificação está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#aplicativo-desktop-exe" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a>.</p>
+      <div class="code" id="hash">D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74</div>
+      <p style="color:var(--muted);font-size:14px;max-width:760px">O frontend embutido é <code style="font:12px var(--mono)">/assets/index-BCxGHaIP.js</code>, exatamente o mesmo do <code style="font:12px var(--mono)">dist/</code> gerado no build <code>88f36d9</code> (78/78 assets). O gate aprovou o exe e confirmou que MSI e NSIS não o reescreveram. O procedimento está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#verificar-o-binário" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a> e o relatório completo em <a href="https://github.com/TyagoAlves/OpenDesign-Rust/blob/main/docs/qa-golive-desktop.md" target="_blank" rel="noopener" style="color:var(--accent-ink)">docs/qa-golive-desktop.md ↗</a>.</p>
     </div>
   </section>
 
@@ -360,7 +360,7 @@ conta / nuvem         <b>← inexistente</b></div>
       <div class="faq">
         <details><summary>O OpenDesign é realmente gratuito?</summary><p>Sim. O projeto é open-source sob licença MIT. Não há assinatura, plano pago ou marca d'água. O binário desktop é distribuído sem custo.</p></details>
         <details><summary>Preciso instalar algo para usar o .exe?</summary><p>Não. O executável embute o frontend e a camada desktop. Não é necessário ter Node.js, pnpm, wrangler ou um banco externo instalado.</p></details>
-        <details><summary>Por que o aviso de prévia aparece no topo?</summary><p>Porque este binário ainda não passou no gate de QA que confere se o frontend embutido rastreia o <code>dist/</code> gerado no mesmo build. O go-live não foi aprovado. O aviso permanece até um build final ser verificado.</p></details>
+        <details><summary>Como sei que este binário passou no QA?</summary><p>O gate conferiu que o frontend embutido rastreia o <code>dist/</code> do mesmo build (78/78 assets), que o exe não foi reescrito pelo bundle e que o exe extraído do MSI e do NSIS tem o mesmo SHA. Smoke com CSP de release, reload e desinstalação limpa também passaram. O go-live foi aprovado pelo Tyago.</p></details>
         <details><summary>Onde meus projetos são salvos?</summary><p>Em um arquivo SQLite na pasta de dados do aplicativo no Windows: <code>%APPDATA%\com.opendesign.app\opendesign.db</code>. Nada é enviado para servidores.</p></details>
         <details><summary>Dá para usar os arquivos comercialmente?</summary><p>O código é MIT. Você pode usar o editor, adaptá-lo e distribuir seu trabalho. A marca OpenDesign e os logos permanecem com seus respectivos donos.</p></details>
         <details><summary>Esta página é independente?</summary><p>Sim. É uma landing do fork <code>TyagoAlves/OpenDesign-Rust</code>. Identidade, textos e assets são do próprio projeto OpenDesign; não há vínculo com projetos de terceiros.</p></details>
@@ -372,9 +372,9 @@ conta / nuvem         <b>← inexistente</b></div>
     <div class="wrap">
       <span class="eyebrow">Código aberto · execução local</span>
       <h2>Faça design sem depender de ninguém.</h2>
-      <p>Baixe a prévia, explore o editor e acompanhe o projeto. Quando o build final passar no QA e houver OK do Tyago, o aviso de prévia será atualizado.</p>
+      <p>Baixe o binário aprovado, explore o editor e acompanhe o projeto. O QA dos instaladores fechou verde e o go-live tem o OK do Tyago.</p>
       <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
-      <p class="final__note">Prévia em validação · não é uma release aprovada · use por sua conta e risco</p>
+      <p class="final__note">Release aprovada · QA verde · código aberto sob MIT</p>
     </div>
   </section>
 </main>
@@ -384,7 +384,7 @@ conta / nuvem         <b>← inexistente</b></div>
     <span>© 2026 OpenDesign · MIT · Landing independente do fork TyagoAlves/OpenDesign-Rust.</span>
     <span class="footer__links">
       <a href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">Repositório ↗</a>
-      <a href="https://github.com/TyagoAlves/OpenDesign-Rust#aplicativo-desktop-exe" target="_blank" rel="noopener">Documentação ↗</a>
+      <a href="https://github.com/TyagoAlves/OpenDesign-Rust#baixar-o-exe" target="_blank" rel="noopener">Documentação ↗</a>
       <a href="#topo">Voltar ao topo ↑</a>
     </span>
   </div>
