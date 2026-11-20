@@ -94,6 +94,63 @@ curl -X PUT http://localhost:3006/api/designs/1 \
 
 Agentes do OpenClaw também podem usar a ferramenta de navegador para interagir visualmente com o editor — navegar, clicar em templates, editar texto e exportar PNGs.
 
+## Aplicativo desktop (`.exe`)
+
+Além da versão web, o OpenDesign é entregue como **aplicativo desktop Windows** via
+[Tauri 2](https://v2.tauri.app/). O binário canônico fica em `Release/OpenDesign.exe`: ele embute
+o frontend, usa **SQLite local** e não depende do backend Hono/wrangler — os designs ficam na
+máquina do usuário, em `%APPDATA%\com.opendesign.app\opendesign.db`. Não há nuvem, conta ou
+assinatura envolvidas.
+
+| Item | Valor conferido em disco |
+|---|---|
+| Arquivo | `Release/OpenDesign.exe` |
+| Tamanho | 13.979.136 bytes (~13,3 MB) |
+| SHA-256 | `7F47B6D4FDAB2478EFF5EA35971A8A1AD74143CB5562A4C815DD02B42D63F7E1` |
+| Frontend embutido | `/assets/index-DbD7ieMa.js` |
+| Janela | `OpenDesign` (splash + janela principal) |
+| Persistência | SQLite local (`tauri-plugin-sql`), sem `/api` remoto |
+
+### Como executar
+
+1. Obtenha `Release/OpenDesign.exe` (ou gere o seu, abaixo).
+2. Dê dois cliques. Não precisa instalar Node, pnpm nem wrangler — o binário é autocontido.
+3. Crie um projeto, edite e exporte. O conteúdo permanece no SQLite local; fechar e reabrir o
+   app preserva os projetos, páginas, brand kits e fontes importadas.
+
+> **Estado atual do binário versionado:** o `.exe` acima é um **artefato de registro, não uma
+> release aprovada**. Ele embute `index-DbD7ieMa.js`, mas o `dist/` vigente aponta
+> `index-BHWflTva.js` — ou seja, o binário **não rastreia** o frontend atual e **não passa no
+> gate**. O go-live segue **NÃO APROVADO**. Não promova, assine nem distribua este arquivo sem
+> OK explícito do Tyago. Detalhes em [`docs/qa-golive-desktop.md`](docs/qa-golive-desktop.md)
+> e [`TAURI-READINESS.md`](TAURI-READINESS.md).
+
+### Como verificar se um `.exe` rastreia o `dist/`
+
+O gate de QA é somente leitura e falha fechado — não copia, não builda, não publica:
+
+```powershell
+powershell -NoProfile -File scripts/check-embedded-bundle.ps1 -Exe target/release/app.exe -DistDir dist -FullAssetSet
+```
+
+Ele exige leitura estável do PE, **exatamente um** `/assets/index-*.js` embutido, igual ao
+`src` do `<script>` em `dist/index.html`, e (com `-FullAssetSet`) todos os assets do `dist/`.
+`Exit 0` = passou; `Exit 1` = reprovou. Rode sempre no `.exe` cru recém-gerado, antes do smoke.
+
+### Como gerar um `.exe` rastreável
+
+1. Com o código congelado, rode `pnpm test` (**17 testes**) e `pnpm build`.
+2. Gere o binário cru: `pnpm tauri build --no-bundle` (o `beforeBuildCommand` já roda o build do
+   frontend; a config canônica é `src-tauri/tauri.conf.json`).
+3. Rode o gate em `target/release/app.exe` contra o `dist/` **desse mesmo build**.
+4. Somente com gate verde: gere MSI/NSIS no CI reaproveitando o mesmo `.exe`
+   (`--no-binary-patching`, para não alterar os bytes) e repita o gate no exe final.
+5. Substitua `Release/OpenDesign.exe` e registre o novo SHA-256.
+
+O config canônico mantém `bundle.active: false` e `targets: "all"`; MSI/NSIS são gerados no CI
+por override em tempo de execução (`src-tauri/ci-build.json`), sem mexer no config versionado.
+Consulte [`README-TAURI.md`](README-TAURI.md) e [`docs/tauri-ci.md`](docs/tauri-ci.md).
+
 ## Stack tecnológica
 
 | Camada | Tecnologia |

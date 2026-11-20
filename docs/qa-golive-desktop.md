@@ -821,3 +821,30 @@ rejeitado de propósito (fail-closed); o fallback segue funcionando.
 
 Enquanto qualquer linha estiver ❌, **nenhum build é executado**. Nenhum build
 foi executado até agora.
+
+### Commit/push `862de17` — binário versionado NÃO é referência do gate
+
+Aviso do Tyago: o `OpenDesign` foi commitado e pushed para
+`github.com/TyagoAlves/OpenDesign-Rust` no commit `862de17c83d48242ced34f293c94684b3edd8489`
+(81 arquivos, "feat: interface e documentacao em pt-BR, suporte Tauri/SQLite e
+gate de bundle"). **Não fui eu** — Douglas não fez commit/push/tag/release algum.
+
+Verificado em disco (leitura):
+
+- `git log -1` = `862de17c83d48...`; `git status --short` limpo.
+- `.gitignore` inclui `*.log`, `/Release/*.bak`, `/Release/*-FRESH-*.exe`. Entrou
+  no commit **apenas** `Release/OpenDesign.exe` (binário canônico); o
+  `OpenDesign-FRESH-...exe` e o `.stale.bak` ficaram de fora.
+- `Release/OpenDesign.exe` versionado: 13.979.136 bytes, 15:33:53, SHA-256
+  `7F47B6D4FDAB2478EFF5EA35971A8A1AD74143CB5562A4C815DD02B42D63F7E1` —
+  **exatamente o exe que sinalizei como NÃO rastreável** (embute
+  `index-DbD7ieMa.js`, enquanto o `dist/index.html` vigente aponta
+  `index-BHWflTva.js`).
+
+**Decisão registrada:** NÃO usar o exe do repo como referência do gate. A
+referência continua sendo o hash que o `dist` gerar no **build único**, após
+Luan/Renata/Heitor aplicarem as correções. Quando o exe novo for gerado e o gate
+ficar verde, **esse binário versionado estará desatualizado** — precisa ser
+substituído em **novo commit**, cuja decisão é do Tyago. Douglas não faz
+commit/push por conta própria. Zero commit/push/tag/release/publish sem OK
+explícito; escrita só em `OpenDesign/`.
