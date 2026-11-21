@@ -262,16 +262,18 @@ export function createCore({ backend, sessionId = "sess-local", transport = "std
       return respostaErro(msg?.id ?? null, ERRO.PARAMS, "Mensagem JSON-RPC inválida");
     }
 
+    // Notificações não têm versão negociada própria: são aceitas silenciosamente.
+    // Alguns clientes MCP enviam `notifications/initialized` COM `id` (fora do
+    // spec); antes isso caía no `default` e virava -32601 Method not found.
+    // O reconhecimento pelo prefixo vem ANTES da validação de versão/headers.
+    if (msg.method.startsWith("notifications/")) return null;
+
     const ehNotificacao = !("id" in msg);
     const tr = ctx.transport ?? transport;
     const id = msg.id ?? null;
     const ctxInterno = { ...ctx, id, transport: tr };
 
-    // Notificações não têm versão negociada própria; responder não faz sentido.
-    if (ehNotificacao) {
-      if (msg.method.startsWith("notifications/")) return null;
-      return null;
-    }
+    if (ehNotificacao) return null;
 
     const version = versionDaMensagem(msg, ctxInterno);
     if (!SUPPORTED_VERSIONS.includes(version)) {
