@@ -23,7 +23,10 @@ export function McpConfirmDialog() {
         </h2>
         <p id="mcp-confirm-desc" class="mb-1 text-sm text-zinc-700">{pedido.descricao}</p>
         {pedido.arquivo && (
-          <p class="mb-4 text-xs text-zinc-500">{tr("Arquivo: {0}", [pedido.arquivo])}</p>
+          <p class="mb-1 text-xs text-zinc-500">{tr("Arquivo: {0}", [pedido.arquivo])}</p>
+        )}
+        {pedido.destino && (
+          <p class="mb-4 text-xs text-zinc-500">{tr("Destino: {0}", [pedido.destino])}</p>
         )}
         <div class="mt-4 flex flex-wrap gap-2">
           <button type="button" class="agent-access-btn agent-access-btn--danger" onClick={negar}>

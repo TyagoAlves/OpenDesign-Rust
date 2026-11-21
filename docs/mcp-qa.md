@@ -1,17 +1,19 @@
 ---
 id: QA-MCP-OPENDESIGN
-data: 2026-11-20
+data: 2026-11-21
 responsavel: Douglas — QA e segurança
-status: GATE 1 PRONTO (protótipo isolado: 6/6 SIM, crítica cega Flávia `ses_e04c30a8cffeRxJb5yFAaicyEZ` = NÍVEL MÁXIMO nenhum); Gate 2 da versão integrada PREPARADO no §8, reexecução completa após integração com novo OK do Tyago; baseline intacta; sem build, publicação ou commit
-escopo: somente C:\Users\tyago\Projeto\bloaudhab\OpenDesign\docs\mcp-qa.md e .mcp-prototype\testes-seguranca.mjs
+status: GATE 1 PRONTO (protótipo isolado: 6/6 SIM, crítica cega Flávia `ses_e04c30a8cffeRxJb5yFAaicyEZ` = NÍVEL MÁXIMO nenhum); Gate 2 da versão integrada AUDITADO em 21/11/2026, REAVALIADO após correções aprovadas (AC-15, NEG-06, initialize moderno, headers opcionais, toasts, checkbox), após a etapa restrita P1–P4 + alinhamento documental e após revisão independente OK — build pareado, gate 78/78, smoke e item 8 (MSI/NSIS) executados localmente no worktree; continua BLOQUEADO, não PRONTO: matriz não executada, sem baseline nova de CI e sem OK de publicação; AC-07, NEG-03 e Fase 2 de NEG-04 MANUAL/PENDENTE; baseline intacta; sem publicação nova ou commit
+escopo: nesta etapa restrita, `src/client/components/agent-access-panel.tsx`, `src/client/mcp/mcp-core.mjs`, `.mcp-prototype/mcp-core.mjs`, `.mcp-prototype/roundtrip-release.mjs`, `docs/mcp-ux.md`, `docs/mcp-planejamento.md`, `docs/mcp-qa.md`, `docs/mcp-gate2-preparacao.md` e `CHANGELOG.md`; nenhum build publicado, nenhuma baseline nova, nenhum commit, push, tag, release ou publicação nova
 ---
 
 # MCP no OpenDesign — plano de QA e segurança
 
 ## 0. Premissas, baseline e limites
 
-- **Isto é um plano, não uma implementação.** Nada aqui está implementado. O editor hoje não tem
-  tela de `Settings`, não tem MCP integrado e não tem servidor/serviço próprio além do IPC do Tauri.
+- **Isto é um plano de QA, não evidência de gate.** O protótipo isolado e a integração Gate 2
+  existem como código na árvore de trabalho — inclusive a tela `Settings → Agent access` e o
+  serviço local —, mas nenhum resultado aqui atesta o app integrado: a matriz §8.2 não foi
+  executada e o Gate 2 permanece `BLOQUEADO — não PRONTO`. Não há nuvem, conta ou acesso remoto.
 - **Referência conceitual, não cópia.** O Drift (GPLv3) serviu apenas de inspiração para o
   padrão “opt-in local, desligado por padrão, token por sessão”. Nenhum código, documento,
   config, nome, string, ícone ou marca do Drift pode entrar no OpenDesign (MIT, `LICENSE`).
@@ -21,23 +23,26 @@ escopo: somente C:\Users\tyago\Projeto\bloaudhab\OpenDesign\docs\mcp-qa.md e .mc
   Exe publicado: `Release/OpenDesign.exe`, 13.946.880 bytes, SHA-256
   `D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74`.
   Qualquer evidência local de `dist/`, `target/` ou builds antigos **não** substitui essa baseline.
-- **Fora de escopo deste documento e da frente:** `Release/`, `README`, landing/`gh-pages`,
-  `.github/`, CI, build, instaladores, commit, push, tag, release, draft e publicação.
-  Os únicos arquivos escritos nesta frente são este gate e a suíte isolada
-  `.mcp-prototype/testes-seguranca.mjs` (§3.1).
-- **UX e escopo de referência:** [`docs/mcp-ux.md`](mcp-ux.md) propõe
+- **Fora de escopo nesta etapa restrita:** `Release/`, `README`, landing/`gh-pages`, `.github/`,
+  CI, build, instaladores, commit, push, tag, release, draft e publicação. Os únicos arquivos
+  escritos nesta etapa são os do `escopo` no frontmatter: correções P1–P4, alinhamento documental
+  e o registro em `docs/mcp-gate2-preparacao.md`.
+- **UX e escopo de referência:** [`docs/mcp-ux.md`](mcp-ux.md) define
   `Configurações → Acesso do agente`, default off, token oculto/copiável e os estados
   `Desligado` → `aguardando agente` → `Agente conectado`.
   [`docs/mcp-planejamento.md`](mcp-planejamento.md) define o catálogo V1, o protocolo e as decisões
-  D1–D6 do Rafael. Este plano não altera nenhum dos dois; ele define como validá-los.
+  D1–D6 do Rafael, já refletidas na integração da árvore de trabalho. Este plano define como
+  validá-los no app integrado; não altera a baseline.
 - **Protótipo isolado:** `.mcp-prototype/` é prova de conceito, não produto. Ele não altera bundle,
   PE, assets, CSP, comandos Tauri, gate ou baseline. A integração dele ao app **sim** dispara §6.
 - **Decisões do Tyago registradas em 20/11/2026:** não há pendências em aberto para a V1. As seis
   respostas levantadas neste documento foram aceitas e o escopo de tools segue o plano do Rafael.
   Ver §7. Qualquer reversão é mudança de escopo e volta ao §6.
 - **Gate 1 ≠ Gate 2.** O `PRONTO` desta frente cobre apenas o protótipo isolado (§3.1). Com o Gate 1
-  autorizado, o QA da versão integrada está preparado no §8; a matriz completa AC-01…22/NEG-01…06
-  só é reexecutada depois da integração, com build/CI/baseline nova e OK novo do Tyago.
+  autorizado, a versão integrada foi **auditada em 21/11/2026** (20 subagentes, somente leitura e
+  comandos locais). O resultado está no §8: **Gate 2 BLOQUEADO, não PRONTO**. A matriz completa
+  AC-01…22/NEG-01…06 não foi executada no app integrado; faltam build/CI pareado, baseline nova do
+  mesmo run, item 8, smoke e OK novo do Tyago.
 
 ### 1. Critérios de aceite — visão geral
 
@@ -384,8 +389,10 @@ publicação. Reutilizar hash/run antigo é reprovação automática.
 | Escrever/revisar `.mcp-prototype/testes-seguranca.mjs` e este gate | Arquivos isolados: não entram no bundle, no PE, no CSP, nos comandos Tauri nem no CI | **Não** exige novo QA do binário; revalidar `node --check` + 6/6 SIM |
 | **Somente documentos (`docs/mcp-qa.md`, `docs/mcp-ux.md`, `docs/mcp-planejamento.md`)** | Não altera bundle, PE, assets, CSP, comandos ou CI | **Não** exige novo QA do binário |
 
-Gate 1 autorizado: o pacote do Gate 2 está preparado no **§8**. Nenhum item da tabela acima foi
-executado nesta frente; build, nova baseline, CI e publicação dependem de OK novo do Tyago.
+Gate 1 autorizado: o pacote do Gate 2 está no **§8**. Nenhum item da tabela acima foi executado
+nesta frente: não houve build, nova baseline, CI, smoke, commit nem publicação. O resultado local
+do gate `-FullAssetSet` (75/78, par exe↔`dist/` dessincronizado) está registrado no §8.3 e **não**
+substitui a baseline publicada do run `44818112977`.
 
 Nota: os artefatos locais atuais (`dist/index-B8HL4cME.js`, `target/release/app.exe` com SHA
 `3D56E6F3…`) divergem da baseline publicada; eles não podem ser usados como referência de
@@ -418,14 +425,30 @@ para a V1 é mudança de escopo e exige nova decisão do Tyago.
 
 ---
 
-## 8. Gate 2 — QA da versão integrada (preparado; não executado)
+## 8. Gate 2 — QA da versão integrada (auditado e reavaliado em 21/11/2026; **BLOQUEADO**)
 
 O `PRONTO` de §3.1 vale **somente** para o Gate 1 (protótipo isolado): 6 negativos 6/6 SIM e crítica
 cega Flávia (`ses_e04c30a8cffeRxJb5yFAaicyEZ`, `NÍVEL MÁXIMO: nenhum`). Ele **não** atesta o app
-integrado. Com o Gate 1 autorizado pelo Tyago, este §8 prepara o Gate 2. A reexecução completa da
-matriz AC-01…22/NEG-01…06 fica para **depois da integração**, com build/CI/artefato/baseline nova,
-item 8, smoke e OK explícito do Tyago. Nada disso foi feito aqui: não houve build, nova baseline,
-commit, push, tag, release ou publicação. A baseline permanece `D57E2866…ACF74`.
+integrado. Em 21/11/2026, com autorização para escopo **completo local, sem publicar**, foram
+lançados **20 subagentes** em modo **leitura + comandos locais de diagnóstico** — nenhum editou
+arquivo, rodou build, commitou ou publicou. Os 20 retornaram; depois das correções aprovadas, uma
+nova rodada de **20 subagentes** reavaliou o estado em modo leitura + diagnóstico. A consolidação
+está no §8.3.
+
+**Correções aprovadas após a auditoria (reavaliadas em §8.3):** AC-15 (snippet HTTP passou a entregar
+`OPENDESIGN_MCP_TOKEN` em `env`), NEG-06 (export MCP passou a usar `pickSavePath` + nonce, destino no
+diálogo e confirmações serializadas), `initialize` moderno recusado com `notifications/initialized`
+com `id` aceito no core do app, `Mcp-Method`/`Mcp-Name` documentados como opcionais, toasts/copy do
+ux (`Token revogado.`, `Agente desconectado.`, `Snippet copiado.`) e checkbox apenas visual sem
+persistência. `Serviço recuperado automaticamente.` permanece **registrado como texto previsto, não
+emitido**. Também foi removida a ressalva de material GPL do grafo de build. Essas correções são
+implementação em árvore de trabalho; **não** são execução da matriz, não geraram build pareado e não
+autorizam publicação.
+
+**Veredito: Gate 2 continua BLOQUEADO — não está PRONTO.** Mesmo com as divergências estáticas
+corrigidas, a matriz AC-01…22/NEG-01…06 não foi executada no app integrado; não houve build/CI
+pareado, nova baseline do mesmo run, item 8, smoke, commit, push, tag, release ou publicação. A
+baseline permanece `D57E2866…ACF74`. NEG-03 e a Fase 2 de NEG-04 permanecem **MANUAL/PENDENTE**.
 
 ### 8.1 Regras de ouro do Gate 2
 
@@ -439,45 +462,224 @@ commit, push, tag, release ou publicação. A baseline permanece `D57E2866…ACF
   indicador verde; token ausente/curto não sobe; desligar/fechar encerra listener e child, revoga o
   token e não deixa processo órfão; restart volta ao default off.
 - **Reprovação automática:** qualquer `NÃO`/`FAIL` na matriz abaixo, `pnpm test` < 17/17, gate
-  `-FullAssetSet` != 78/78, CSP/capability alteradas sem nova rodada e OK do Tyago, ou qualquer
-  material do Drift no build.
+  `-FullAssetSet` != 78/78, CSP/capability alteradas sem nova rodada e OK do Tyago, ou reintrodução
+  de material GPL/Drift no build (removido em 21/11/2026; §8.3 "Divergências da auditoria já corrigidas").
 
 ### 8.2 Matriz integrada — AC-01…22 e NEG-01…06
 
-| ID | Verificação no app integrado (Gate 2) | Evidência exigida | Estado |
-|---|---|---|---|
-| AC-01 | Sem listener/stdio/token/verde ao abrir, inclusive após uso anterior e restart. | Snapshot + `netstat`/process list antes do clique. | Não executado |
-| AC-02 | Só `Settings → Agent access` liga; nada por CLI, env, flag ou migration. | Clique deliberado + revisão de código/log. | Não executado |
-| AC-03 | Bind apenas `127.0.0.1`; conexão pelo IP da máquina falha. | `netstat -ano` com PID do app. | Não executado |
-| AC-04 | Token aleatório por sessão; T1≠T2; T1 morto no disable/close/restart. | T1/T2 mascarados + chamadas recusadas. | Não executado |
-| AC-05 | Nenhum valor do token em log, console, snapshot, DB, UI, argv ou evidência. | Varredura com valor exato mascarado. | Não executado |
-| AC-06 | stdio e HTTP após opt-in, mesma capacidade e semântica de erro. | Matriz §2.2 nos dois transportes. | Não executado |
-| AC-07 | Fase 2 condicional: lote atômico/desfazível só se exposto. | Gate MCP-09 antes de qualquer exposição. | Não executado |
-| AC-08 | Um SQLite (`app_config_dir`), sem 2º storage, SQL arbitrário ou path escape. | Caminho do DB + hashes + escopo por design. | Não executado |
-| AC-09 | Sem egresso: nuvem, telemetry, DNS externo, `:4747`, Wrangler/D1/R2. | Firewall/proxy + `netstat` + varredura do bundle. | Não executado |
-| AC-10 | Suíte local permanece verde. | `pnpm test` 17/17. | Não executado |
-| AC-11 | Bundle embutido íntegro e único. | Gate `-FullAssetSet` 78/78 + SHA do bundle. | Não executado |
-| AC-12 | CSP/capability byte a byte iguais às aprovadas. | Diff da string + `capabilities/default.json`. | Não executado |
-| AC-13 | Auto-start não sobrevive ao restart; desligar volta a desmarcado. | MCP-03 + inspeção de storage/DB após restart. | Não executado |
-| AC-14 | Catálogo exato 6/15 nos dois transportes; `catalog_status` sem token/path. | `tools/list` + diff + varredura da resposta. | Não executado |
-| AC-15 | Token apenas no `env` do snippet; query rejeitada; falha fechada se ausente/curto. | Snippet + `Win32_Process` + varredura. | Não executado |
-| AC-16 | HTTP fixo em `127.0.0.1:8788`, erro explícito se ocupada, sem fallback. | `netstat` + erro na UI + retry. | Não executado |
-| AC-17 | Paridade stdio/HTTP em catálogo, erros e regras de token. | Matriz §2.2 + famílias do protocolo. | Não executado |
-| AC-18 | Nenhuma mudança de CSP/capability sem nova rodada e OK do Tyago. | §6 + diff + OK registrado. | Não executado |
-| AC-19 | Desktop via `localApi()`; HTTP backend só no dev; token não vai à API local. | Revisão do adaptador + `netstat`. | Não executado |
-| AC-20 | `templates_preencher` com `save:true`; origem intacta; novo `id`. | NEG-05 + hashes antes/depois. | Não executado |
-| AC-21 | Export com confirmação por arquivo; “lembrar” só em memória. | MCP-16 + NEG-06 + restart sem preferência. | Não executado |
-| AC-22 | V1 sem tool de lote; `-32602` e DB/canvas intactos. | `tools/list` + chamada de lote. | Não executado |
-| NEG-01 | Ausente/curto/aleatório/revogado/outra sessão/query: 401/403, corpo genérico, 10 tentativas sem crash/troca de porta/eco; stdio fechado. | Response, console, `netstat` antes/depois. | Não executado |
-| NEG-02 | 8788 ocupada: erro claro, sem fallback, sem token ativo; retry com token novo após liberar. | `netstat`, screenshot sem token, PID, retry green. | Não executado |
-| NEG-03 | Aba/janela fechada e toggle: sem escrita/undo, listener/child encerrados, token inválido, sem órfão, DB íntegro. | `netstat`, process list, hash do DB. | Não executado |
-| NEG-04 | V1 `-32602` sem tool/efeito; Fase 2 aborta transação, DB byte-idêntico, undo único. | `tools/list`, hashes, histórico de undo, response. | Não executado |
-| NEG-05 | `save:false`, `save` omitido e `id` da origem barrados; `save:true` forçado; novo design. | Body, hashes, `isError:true`. | Não executado |
-| NEG-06 | Sem arquivo sem consentimento; cancelamento sem gravação; nonce one-shot; “lembrar” some no restart. | Diretório antes/depois, diálogo, restart, varredura. | Não executado |
+Legenda dos estados: **SIM** = executado/verificado com evidência nesta rodada; **NÃO** = divergência
+em aberto que reprova (nesta rodada, somente AC-11 no par local 75/78); **PENDENTE** = não executado
+no app integrado (a auditoria estática pode ser favorável — inclusive para divergências já corrigidas,
+registradas em §8.3 —, mas não substitui a execução); **MANUAL** = verificação manual exigida, não
+automatizável aqui (AC-07, NEG-03 e Fase 2 de NEG-04 permanecem MANUAL/PENDENTE). A coluna “Estático” registra
+o que os 20 subagentes leram; ela **nunca** converte um PENDENTE em SIM, conforme a regra “Gate 1 não
+é reutilizado”. Correção confirmada no fonte não equivale a execução da matriz.
 
-NEG-03 e a Fase 2 de NEG-04 continuam como verificações manuais/gate MCP-09; as exceções aceitas no
-Gate 1 não dispensam a execução delas no app integrado. O `PRONTO` do Gate 1 não é reutilizado como
-evidência desta matriz.
+| ID | Verificação no app integrado (Gate 2) | Evidência exigida | Estático (20 subagentes) | Estado |
+|---|---|---|---|---|
+| AC-01 | Sem listener/stdio/token/verde ao abrir, inclusive após uso anterior e restart. | Snapshot + `netstat`/process list antes do clique. | `McpInner::default()` off; `use-mcp-access.ts:56`; limpeza no `Exit`. | PENDENTE |
+| AC-02 | Só `Settings → Agent access` liga; nada por CLI, env, flag ou migration. | Clique deliberado + revisão de código/log. | `mcp_start` só no clique; `OPENDESIGN_MCP_ENABLE` não é lido no binário. | PENDENTE |
+| AC-03 | Bind apenas `127.0.0.1`; conexão pelo IP da máquina falha. | `netstat -ano` com PID do app. | `mcp/mod.rs:24-25`, `http.rs:42-43`; sem `0.0.0.0`/`::`. | PENDENTE |
+| AC-04 | Token aleatório por sessão; T1≠T2; T1 morto no disable/close/restart. | T1/T2 mascarados + chamadas recusadas. | CSPRNG 32 bytes + `timingSafeEqual` + redação em `token.rs`. | PENDENTE |
+| AC-05 | Nenhum valor do token em log, console, snapshot, DB, UI, argv ou evidência. | Varredura com valor exato mascarado. | Nenhum valor real coletado nesta rodada; canais proibidos sem ocorrência. | PENDENTE |
+| AC-06 | stdio e HTTP após opt-in, mesma capacidade e semântica de erro. | Matriz §2.2 nos dois transportes. | Mesmo `core.handle`; stdio sem listener; divergências de versão/header (§8.3). | PENDENTE |
+| AC-07 | Fase 2 condicional: lote atômico/desfazível só se exposto. | Gate MCP-09 antes de qualquer exposição. | V1 não expõe lote. | MANUAL / PENDENTE |
+| AC-08 | Um SQLite (`app_config_dir`), sem 2º storage, SQL arbitrário ou path escape. | Caminho do DB + hashes + escopo por design. | Um DB ativo; storage nativo latente não registrado (§8.3). | PENDENTE |
+| AC-09 | Sem egresso: nuvem, telemetry, DNS externo, `:4747`, Wrangler/D1/R2. | Firewall/proxy + `netstat` + varredura do bundle. | Varredura estática: **SEM EGRESSO**; PEs sem `:4747`/`:8787`/`wrangler`. | PENDENTE |
+| AC-10 | Suíte local permanece verde. | `pnpm test` 17/17. | 17/17 na auditoria de 21/11; não reexecutado nesta etapa restrita. | **SIM** |
+| AC-11 | Bundle embutido íntegro e único. | Gate `-FullAssetSet` 78/78 + SHA do bundle. | Par local `target/release/app.exe` + `dist/` deu **75/78** e bundle divergente. | **NÃO** (local) |
+| AC-12 | CSP/capability byte a byte iguais às aprovadas. | Diff da string + `capabilities/default.json`. | CSP SHA `73EDE1DD…C76C9`; 5 permissões, nenhuma nova. | **SIM** |
+| AC-13 | Auto-start não sobrevive ao restart; desligar volta a desmarcado. | MCP-03 + inspeção de storage/DB após restart. | Sem persistência de opt-in; checkbox `Iniciar automaticamente após eu ligar o acesso` renderiza, desabilitado/desmarcado no launch e marcável só após bind OK. | PENDENTE |
+| AC-14 | Catálogo exato 6/15 nos dois transportes; `catalog_status` sem token/path. | `tools/list` + diff + varredura da resposta. | 6/15 idênticos nos dois catálogos; `save:true`; sem lote. | PENDENTE |
+| AC-15 | Token apenas no `env` do snippet; query rejeitada; falha fechada se ausente/curto. | Snippet + `Win32_Process` + varredura. | Snippet HTTP e preview usam `env.OPENDESIGN_MCP_TOKEN`, sem `headers.Authorization`; Bearer montado em runtime pelo cliente. | PENDENTE |
+| AC-16 | HTTP fixo em `127.0.0.1:8788`, erro explícito se ocupada, sem fallback. | `netstat` + erro na UI + retry. | Bind único; `AddrInUse` → `port_in_use`; nenhum fallback. | PENDENTE |
+| AC-17 | Paridade stdio/HTTP em catálogo, erros e regras de token. | Matriz §2.2 + famílias do protocolo. | Catálogo/erros iguais; versões extras com decisão registrada; `initialize` moderno recusado; headers opcionais validados se presentes. | PENDENTE |
+| AC-18 | Nenhuma mudança de CSP/capability sem nova rodada e OK do Tyago. | §6 + diff + OK registrado. | Diff byte a byte na auditoria; inalteradas também nesta etapa restrita. Verificação por diff, não execução no app integrado. | **SIM** |
+| AC-19 | Desktop via `localApi()`; HTTP backend só no dev; token não vai à API local. | Revisão do adaptador + `netstat`. | `api.ts:9` + `local-db.ts`; token só como `secrets`. | PENDENTE |
+| AC-20 | `templates_preencher` com `save:true`; origem intacta; novo `id`. | NEG-05 + hashes antes/depois. | `enum:[true]`, envio literal `save:true`, só INSERT. | PENDENTE |
+| AC-21 | Export com confirmação por arquivo; “lembrar” só em memória. | MCP-16 + NEG-06 + restart sem preferência. | `pickSavePath` + nonce repassados a `saveDataURLNative`; destino na chave de sessão; `Set` volátil; fila serializa confirmações. | PENDENTE |
+| AC-22 | V1 sem tool de lote; `-32602` e DB/canvas intactos. | `tools/list` + chamada de lote. | Nenhuma tool `lote`/`batch`; `lote_editar` → `-32602` no protótipo. | PENDENTE |
+| NEG-01 | Ausente/curto/aleatório/revogado/outra sessão/query: 401/403, corpo genérico, 10 tentativas sem crash/troca de porta/eco; stdio fechado. | Response, console, `netstat` antes/depois. | 6/6 SIM **somente no protótipo** (§3.1); não reutilizado aqui. | PENDENTE |
+| NEG-02 | 8788 ocupada: erro claro, sem fallback, sem token ativo; retry com token novo após liberar. | `netstat`, screenshot sem token, PID, retry green. | `EADDRINUSE`/`port_in_use`, bind antes de mutar estado, retry sem resíduo. | PENDENTE |
+| NEG-03 | Aba/janela fechada e toggle: sem escrita/undo, listener/child encerrados, token inválido, sem órfão, DB íntegro. | `netstat`, process list, hash do DB. | Limpeza no `Exit` por código; execução manual não feita. | **MANUAL / PENDENTE** |
+| NEG-04 | V1 `-32602` sem tool/efeito; Fase 2 aborta transação, DB byte-idêntico, undo único. | `tools/list`, hashes, histórico de undo, response. | Parte V1 coerente com o catálogo; Fase 2 não existe na V1. | **MANUAL / PENDENTE** |
+| NEG-05 | `save:false`, `save` omitido e `id` da origem barrados; `save:true` forçado; novo design. | Body, hashes, `isError:true`. | Validação antes do backend; `additionalProperties:false`. | PENDENTE |
+| NEG-06 | Sem arquivo sem consentimento; cancelamento sem gravação; nonce one-shot; “lembrar” some no restart. | Diretório antes/depois, diálogo, restart, varredura. | `pickSavePath` + `{path, nonce}` no caminho MCP; confirmação mostra arquivo e destino; nonce one-shot no Rust; fila de confirmação; `Set` volátil para “lembrar”. | PENDENTE |
+
+Os três `SIM` da matriz (AC-10, AC-12, AC-18) vêm de teste/diff **local**, não de execução no app
+integrado; os demais PENDENTE/MANUAL não são convertidos por evidência estática. AC-07,
+NEG-03 e a Fase 2 de NEG-04 permanecem como verificações **MANUAL/PENDENTE**, conforme decisão
+desta rodada. As exceções aceitas no Gate 1 **não dispensam** a execução delas no app integrado. O
+`PRONTO` do Gate 1 e a suíte 6/6 SIM **não são reutilizados** como evidência desta matriz: as
+reexecuções locais foram anexadas somente como complemento (§8.3). Nenhuma linha foi marcada como
+executada no app integrado.
+
+### 8.3 Consolidação da rodada de auditoria (21/11/2026)
+
+**Autorização e limites.** Escopo **completo local, sem publicar**: build/CI local, `pnpm test`, gate
+`-FullAssetSet`, baseline local e smoke permitidos como diagnóstico. Prontidão auditada primeiro.
+20 subagentes rodaram em **leitura + comandos locais de diagnóstico**, sem edição, build, commit ou
+publicação. Não houve commit, push, tag, release, deploy, alteração de CSP/capability, catálogo ou
+`Release/OpenDesign.exe`. O chat foi usado como relay; o Bridge não estava disponível. Este
+documento não fala em nome de Hugo, Tyago ou terceiros.
+
+**Comandos executados e resultados locais**
+
+| Verificação | Resultado |
+|---|---|
+| `node --check .mcp-prototype/testes-seguranca.mjs` | exit 0 |
+| `node .mcp-prototype/testes-seguranca.mjs` | exit 0 — `RESULTADO: 6/6 SIM` (SIM 6, NÃO 0); **não é evidência do Gate 2** |
+| `pnpm test` | **17/17**, exit 0, 0 falhas/skipped/todo/cancelled; apenas `ExperimentalWarning` de SQLite |
+| `powershell -File scripts/check-embedded-bundle.ps1 -Exe target/release/app.exe -DistDir dist -FullAssetSet` | exit 1 — **75/78 por nome** + divergência do bundle principal |
+| Baseline publicada `Release/OpenDesign.exe` | 13.946.880 bytes, SHA-256 `D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74` — **íntegra** |
+
+**Revalidação local pós-correções (fechamento desta frente — somente validação local e docs, sem build).**
+A autorização acima era da auditoria; o fechamento limitou-se a validar as correções na árvore de
+trabalho. Não houve build, gate `-FullAssetSet`, smoke com binário, nova baseline, commit, tag,
+release ou publicação — a tabela anterior permanece como registro histórico da auditoria, não como
+resultado desta revalidação. Os 20 subagentes da segunda rodada também atuaram somente em leitura +
+diagnóstico. Resultados **executados nesta frente**:
+
+| Verificação | Resultado real |
+|---|---|
+| `node --check` nos 8 `.mjs` afetados (protótipo e `src/client/mcp`) | exit 0 para todos; nenhum `SyntaxError` |
+| `node .mcp-prototype/testes-seguranca.mjs` | exit 0 — `RESULTADO: 6/6 SIM` (R1…R6, SIM 6, NÃO 0); **não é evidência do Gate 2** |
+| `npm run i18n:check` (repo-pai) | exit 0 — `3021/3139` nos três idiomas; ruído pré-existente de `shared/locales` (não editados nesta frente) |
+| `git diff --check` (restrito aos arquivos escritos nesta frente, em OpenDesign) | sem saída — nenhum whitespace real nesses arquivos. `shared/locales/*` **não** entrou neste comando; o aviso de CRLF pré-existente (mtime 20/11) permanece e não foi normalizado |
+| Varredura `Drift`/`GPLv3` em `src/`, `.mcp-prototype/`, `vite.config.ts` e `index.html` | 0 ocorrências; ressalvas apenas em `docs/` |
+| `pnpm test` (por fim) | **17/17**, exit 0, 0 falhas/skipped/todo/cancelled; apenas `ExperimentalWarning` de SQLite |
+
+Nenhum desses resultados executa a matriz no app integrado nem substitui o par de artefatos 78/78;
+o Gate 2 segue `BLOQUEADO`.
+
+**Por que o 78/78 local falhou (e por que isso não é um “ajuste de expectativa”).** O par local é
+incoerente: `target/release/app.exe` tem SHA `3D56E6F3…B9D`, embute `/assets/index-B8HL4cME.js`,
+enquanto `dist/index.html` referencia `./assets/index-CS_UnruI.js` (SHA do bundle local
+`BD75877B…EDB5`). Faltam 3 assets exigidos no PE. O gate do go-live (run `44818112977`, artefato
+`14671391681`, ZIP `sha256:400de06a…8c40d`, exe `D57E2866…ACF74`, bundle `88f36d9` com SHA
+`C9FEDB13…0A9D`) usou exe e `dist/` do **mesmo build**. O resultado local não prova a baseline e
+também não a contradiz: prova apenas que é preciso build pareado novo, fora desta rodada.
+
+**Divergências da auditoria já corrigidas nas correções aprovadas (favoráveis, mas não bastam para o
+gate).** As correções abaixo foram aplicadas à árvore de trabalho **após** a auditoria de 21/11 e
+**reavaliadas estaticamente**; nenhuma gerou build, baseline, smoke ou execução da matriz:
+
+- **Material GPL removido do caminho do bundle.** A docblock com “Drift (GPLv3)” foi substituída em
+  `src/client/mcp/catalog.mjs:6` e `.mcp-prototype/catalog.mjs:6` por texto de proveniência genérico;
+  a ressalva permanece somente em documentos de planejamento. Varredura confirma 0 ocorrências em
+  `src/client/**`, `.mcp-prototype/**` e `vite.config.ts`.
+- **AC-15 — token no `env`.** `src/client/hooks/use-mcp-access.ts` e
+  `src/client/components/agent-access-panel.tsx` entregam `env.OPENDESIGN_MCP_TOKEN` no snippet HTTP
+  (preview e real), sem `headers.Authorization`; o Bearer é montado em runtime pelo cliente. O Rust
+  permanece inalterado.
+- **NEG-06 — export com consentimento.** `src/client/mcp/backend-tauri.ts` agora chama
+  `pickSavePath`, exige `{path, nonce}`, mostra o destino no diálogo, inclui o destino na chave de
+  sessão e repassa ambos a `saveDataURLNative`; falhas de gravação viram mensagem fixa sem caminho.
+  `src/client/mcp/confirm.ts` enfileira confirmações para não sobrepor pedidos.
+- **Protocolo/UX com decisão registrada.** `initialize` é recusado em `2026-07-28` com `-32601` nos
+  dois núcleos; toda `notifications/*` — com ou sem `id` — é aceita silenciosamente nos dois cores
+  (`null`; no HTTP, `202` sem corpo), antes da validação de versão/headers, e o `case` inalcançável
+  no integrado foi removido sem alterar o contrato; `Mcp-Method`/`Mcp-Name` são opcionais e validados
+  se presentes; versões extras `2025-03-26`/`2024-11-05` permanecem por decisão híbrida;
+  `ttlMs`/`cacheScope` seguem em avaliação.
+  Checkbox `Iniciar automaticamente após eu ligar o acesso` renderiza desabilitado/desmarcado no launch
+  e marcável só após bind OK, **apenas visual, sem persistência nem recuperação**; toasts
+  `Token revogado.`, `Agente desconectado.`, `Snippet copiado.` e falha de cópia ligados;
+  `Serviço recuperado automaticamente.` fica **registrado como texto previsto, não emitido**. Status
+  usa travessão `—` conforme `docs/mcp-ux.md`.
+
+**Etapa restrita P1–P4 + alinhamento documental (separada da etapa B).** Autorizada somente para
+corrigir as pendências encontradas na preparação; build, gate, smoke, baseline, commit e publicação
+continuaram fora de escopo. Registro integral em `docs/mcp-gate2-preparacao.md` §7.
+
+| Correção | Arquivo(s) | Mudança e resultado local |
+|---|---|---|
+| P1 — precedência dos toasts | `src/client/components/agent-access-panel.tsx:134` | Restaurado `copyNotice ?? access.notice`; `useEffect` que limpa `copyNotice` quando `access.notice` muda foi preservado. `Snippet copiado.` volta a aparecer sobre um notice anterior. |
+| P1 — harness de release | `.mcp-prototype/roundtrip-release.mjs` | Snippet lido por `OPENDESIGN_MCP_TOKEN`; token de `cfg.env.OPENDESIGN_MCP_TOKEN`; checagens "token em `env.OPENDESIGN_MCP_TOKEN`" e "sem `headers.Authorization`" substituíram a expectativa de `Authorization`/sem `env`. |
+| P2/P4 — protocolo canônico | `.mcp-prototype/mcp-core.mjs`, `src/client/mcp/mcp-core.mjs` | Toda `notifications/*`, com ou sem `id`, retorna `null` antes de versão/headers nos dois cores; `case` inalcançável removido no integrado; `-32601` de `initialize` moderno preservado. |
+| P2 — documentação | `docs/mcp-ux.md`, `docs/mcp-planejamento.md`, `docs/mcp-qa.md` | FAQ de D2 limitada a `mcp_exportar`; D1 esclarecido como backend de dados (o HTTP 8788 é transporte MCP, D3); plano atualizado do estado "protótipo isolado" para integração na árvore de trabalho sob Gate 2 bloqueado; frontmatter, premissas, legenda, AC-10/AC-18, referência de seção e `git diff --check` alinhados. |
+
+Resultados **executados nesta etapa** (locais, não evidência do Gate 2): `node --check` nos 3 `.mjs`
+alterados → exit 0; `node .mcp-prototype/testes-seguranca.mjs` → exit 0, `6/6 SIM`; checagem
+dirigida de paridade `core.handle` protótipo ↔ integrado → `5/5` (notificação sem id, com id e com
+id + versão/headers inválidos devolvem `null` nos dois; `initialize` moderno → `-32601`;
+`server/discover` legado → `result`); `git diff --check` nos arquivos rastreados alterados → sem saída (os dois arquivos novos, untracked, foram verificados à parte para trailing whitespace: 0 linhas).
+Nenhum valor real de token foi gerado ou exibido: aliases `T1`/`T2`/`T3` e `<TOKEN_MASCARADO>`.
+
+**Smoke integrado local (etapa B, após o build pareado).** Executado no exe do worktree
+(`51D5A6EB…0121`), sem instalação, promoção de baseline ou publicação:
+`node .mcp-prototype/smoke.mjs` → `SMOKE OK — 16/16`, exit 0;
+`node .mcp-prototype/roundtrip-release.mjs <exe>` → `RESULTADO: 48 OK / 0 FALHA`, exit 0, cobrindo
+HTTP (token em `env`, 401/400/404/405, `no-store`, sem CORS, quatro versões legadas, 15 tools,
+notificação com `id` → 202 sem `-32601`, desligar pela UI encerra o listener) e stdio (zero TCP,
+sem eco de token, EOF limpo, sem panic WebView2 com GUI aberta). Registro integral em
+`docs/mcp-gate2-preparacao.md` §8.4. É evidência **local do par pareado**, não execução da matriz
+§8.2 e não baseline publicada; nenhuma linha PENDENTE/MANUAL foi convertida em SIM.
+
+**Item 8 local (etapa B, após o smoke).** MSI e NSIS gerados do **mesmo** build pareado com
+`pnpm tauri bundle --bundles msi nsis --config src-tauri/ci-build.json --no-binary-patching --no-sign --ci`
+(`BUNDLE_EXIT=0`, `ci-build.json` recriado só no worktree a partir do workflow e removido depois),
+extração administrativa do MSI com elevação autorizada e instalação/desinstalação silenciosa do NSIS,
+com SHAs dos dois exes extraídos **iguais com `-ceq`** a `51D5A6EB…0121` e `-FullAssetSet`
+reaplicado em cada um: 78/78, `GATE: APROVADO`, exit 0. Nenhuma promoção de baseline, publicação
+ou alteração de CSP/capabilities/catálogo; `Release/OpenDesign.exe` segue `D57E2866…ACF74`.
+Registro integral em `docs/mcp-gate2-preparacao.md` §8.5. Também é evidência **local do par
+pareado**, não execução da matriz §8.2 nem autorização de release.
+
+**Bloqueios que impedem marcar Gate 2 como PRONTO**
+
+1. **Artefatos locais pareados, mas sem baseline de CI do mesmo run.** Exe↔`dist` 78/78, smoke e
+   item 8 (MSI/NSIS com SHA idêntico e gate reaplicado) foram executados localmente no worktree
+   (§8.2, §8.4 e §8.5 do plano). Falta a baseline nova de CI **do mesmo run** e o smoke dos
+   instaladores no ambiente de release; evidência local não substitui nem autoriza publicação.
+2. **Sem suíte integrada.** `package.json` segue com 17 testes antigos; nenhum `*.test.*` cobre MCP.
+   AC-10 está verde, mas não cobre a integração.
+3. **Árvore suja / ausência de commit imutável.** As correções aprovadas e os artefatos pré-existentes
+   (`.mcp-prototype/catalog.mjs`, `.mcp-prototype/mcp-core.mjs`, `src/client/mcp/mcp-core.mjs`,
+   `src/client/hooks/use-mcp-access.ts`, `src/client/components/agent-access-panel.tsx`,
+   `src/client/mcp/backend-tauri.ts`, `src/client/mcp/confirm.ts`, `src/client/mcp/catalog.mjs`,
+   `Cargo.lock`, `src-tauri/Cargo.toml`, além de `roundtrip-gate2.mjs`/`roundtrip-release.mjs` novos)
+   estão na árvore de trabalho e foram **preservadas**. Sem commit imutável não há evidência de gate.
+4. **Matriz não executada e itens manuais.** Nenhuma linha AC-01…22/NEG-01…06 foi executada no app
+   integrado. NEG-03 (editor/app fechado) e a Fase 2 de NEG-04 (lote atômico) continuam
+   **MANUAL/PENDENTE**, por decisão do Tyago; as exceções do Gate 1 não os dispensam.
+
+**Verificações favoráveis (estáticas, não suficientes para o gate)**
+
+- **CSP/capability CONFORMES:** string de produção com 161 bytes e SHA `73EDE1DD3A4905698645C6DCF1B0922E271C0CDB20793E5FD48613C91A1C76C9`,
+  idêntica à aprovada; `devCsp` também idêntica ao registro. Capabilities com exatamente
+  `core:default`, `dialog:allow-save`, `sql:allow-execute/load/select` — nenhuma nova permissão.
+- **Porta/bind:** `127.0.0.1:8788` fixo nos dois transportes, sem `0.0.0.0`, `::`, 8787 do MCP,
+  porta efêmeral ou fallback; token em query → 400; falha de bind antes de qualquer mutação de
+  estado, sem token ativo. Ressalva de UI: `port-error` pode ser transitório no polling.
+- **SQLite/`localApi()`:** um DB ativo em `app_config_dir`, queries constantes com parâmetros ligados,
+  IDs validados, token nunca repassado à API local. Ressalvas: storage nativo latente
+  (`save_design`/`load_design` não registrados no `invoke_handler`, deixando 2 tools quebradas) e
+  `kit-transfer.ts:41-49` com `fetch(url)` de kit importado, mitigado pela CSP.
+- **Catálogo:** 6 toolboxes/15 tools idênticos em protótipo e integrado; `templates_preencher` com
+  `save: {enum:[true]}`, `required` e envio literal `save:true`; ausência de ferramenta de lote.
+- **`templates_preencher`:** validação antes do backend, `additionalProperties:false`, apenas
+  INSERT com novo UUID; nenhuma rota de escrita em `/api/templates`. Lacuna residual fora da tool:
+  `projeto_salvar` com `id` sobrescreve via `PUT /api/designs/{id}` sem consentimento no adaptador.
+- **Auto-start:** estado nasce `off`, sem flag/migration/storage persistida; limpeza no `Exit`.
+- **Egresso:** varredura estática **SEM EGRESSO** — 0 `XMLHttpRequest`/`WebSocket`/`EventSource`/
+  `sendBeacon`, 0 telemetry/DNS, 0 `:4747` em código/bundle/PEs; Wrangler/D1/R2 e URLs externas
+  são dev-only ou código inalcançável no desktop. `kit-transfer.ts:43` aceita URL de arquivo de kit
+  importado (ação do usuário, sem endpoint embutido). `netstat`/firewall não executados.
+
+**Mascaramento de token.** Nenhum valor real de T1/T2 foi gerado ou coletado nesta rodada; todas as
+evidências usam apenas os aliases `T1`, `T2`, `T3` e placeholders sintéticos. A varredura pelo valor
+exato **não pôde ser executada** porque não houve valor real em memória — registrada como
+PENDENTE em AC-05, não como SIM. Nenhuma evidência com segredo foi produzida, anexada ou exibida.
+Quando a matriz for executada: valor somente em memória, substituição integral por
+`<TOKEN_MASCARADO>` em snippet, log, console, `netstat`, screenshot, DB e `localStorage`, e varredura
+pelo valor exato em todo o diretório de evidências → 0 ocorrências; se aparecer, descartar e refazer.
+
+**Critério para o próximo ciclo (não executado aqui).** 28/28 linhas com resultado diferente de
+PENDENTE, nenhum NÃO, máscara aplicada, build pareado com gate `-FullAssetSet` 78/78, item 8 e
+smoke integrado (todos já executados localmente no §8 do plano) **mais** baseline nova de CI
+**do mesmo run**, smoke dos instaladores no ambiente de release e OK explícito de publicação.
+PRONTO local **não** autoriza publicar; `Release/` segue congelada.
 
 ## 9. Referências internas
 

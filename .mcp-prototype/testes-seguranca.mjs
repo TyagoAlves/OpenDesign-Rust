@@ -35,7 +35,9 @@ const RAIZ = path.join(AQUI, "..");
 const SERVIDOR_HTTP = path.join(AQUI, "server-http.mjs");
 const SERVIDOR_STDIO = path.join(AQUI, "server-stdio.mjs");
 const BACKEND_HTTP = path.join(AQUI, "backend-dev-http.mjs");
-const ADAPTADOR_DESKTOP = path.join(AQUI, "backend-tauri.ts");
+const ADAPTADOR_DESKTOP = path.join(RAIZ, "src", "client", "mcp", "backend-tauri.ts");
+const CONFIRMA = path.join(RAIZ, "src", "client", "mcp", "confirm.ts");
+const DESTINO_TESTE = "/tmp/export-seguro/a.png";
 const DOC_QA = path.join(RAIZ, "docs", "mcp-qa.md");
 const DOC_UX = path.join(RAIZ, "docs", "mcp-ux.md");
 const BRIDGE = path.join(RAIZ, "src", "client", "lib", "tauri-bridge.ts");
@@ -180,11 +182,12 @@ function extrairAutorizar(fonte, lembrados, confirmar) {
   return new Function("lembrados", "confirmar", `${executavel}\nreturn autorizar;`)(lembrados, confirmar);
 }
 
-const pedidoExport = (arquivo) => ({
+const pedidoExport = (arquivo, destino = DESTINO_TESTE) => ({
   tipo: "export_png",
   descricao: `Salvar PNG em "${arquivo}"`,
   arquivo,
-  chaveSessao: `export:png:${arquivo}`,
+  destino,
+  chaveSessao: `export:png:${arquivo}:${destino}`,
 });
 
 async function registrar(id, cenario, refs, fn) {
@@ -610,13 +613,19 @@ await registrar("R4", "sobrescrita de template", "AC-14 / AC-19 / AC-20 / AC-22 
 // R5 — export sem consentimento -----------------------------------------------
 await registrar("R5", "export sem consentimento", "AC-21 / NEG-06 / D2", async () => {
   const fonte = await readFile(ADAPTADOR_DESKTOP, "utf8");
-  const iAutorizar = fonte.indexOf("await autorizar(");
-  const iGravar = fonte.indexOf("return saveDataURLNative(");
-  assert.ok(iAutorizar >= 0 && iGravar > iAutorizar, "gravacao sem gate de consentimento no adaptador");
-  assert.ok(fonte.includes("dataURLKind(args.data_url)"), "data_url nao e validado");
+  const iPick = fonte.indexOf("await pickSavePath(");
+  const iAutorizar = fonte.indexOf("await autorizar(", iPick);
+  const iGravar = fonte.indexOf("await saveDataURLNative(", iAutorizar);
   assert.ok(
-    fonte.includes("return saveDataURLNative(args.data_url, args.filename)"),
-    "export nao e pass-through da data URL ja gerada",
+    iPick >= 0 && iAutorizar > iPick && iGravar > iAutorizar,
+    "fluxo pick -> autorizar -> save quebrado no adaptador",
+  );
+  assert.ok(fonte.includes("dataURLKind(args.data_url)"), "data_url nao e validado");
+  assert.ok(fonte.includes("pickSavePath(args.filename, kind)"), "pick_save_path nao e chamado");
+  assert.ok(fonte.includes("picked.path, picked.nonce"), "destino/nonce nao repassados a bridge");
+  assert.ok(
+    fonte.includes('chaveSessao: `export:${esperado}:${args.filename}:${destino}`'),
+    "chave de lembrar nao inclui o destino",
   );
   assert.ok(fonte.includes("args.filename"), "nome do arquivo nao e repassado ao destino");
 
@@ -634,7 +643,11 @@ await registrar("R5", "export sem consentimento", "AC-21 / NEG-06 / D2", async (
   assert.equal(negado, true, "export seguiu sem aprovacao");
   assert.equal(confirmacoes.length, 1);
   assert.equal(confirmacoes[0].arquivo, "a.png", "confirmacao sem o nome do arquivo");
-  assert.equal(confirmacoes[0].chaveSessao, "export:png:a.png", "chave de sessao sem o nome do arquivo");
+  assert.equal(
+    confirmacoes[0].chaveSessao,
+    `export:png:a.png:${DESTINO_TESTE}`,
+    "chave de sessao sem o destino",
+  );
   assert.equal(iGravar > iAutorizar, true, "saveDataURLNative anterior ao autorizar");
 
   // NEG-06: nonce one-shot conferido estaticamente na bridge/Rust (sem importar producao).
@@ -650,14 +663,17 @@ await registrar("R5", "export sem consentimento", "AC-21 / NEG-06 / D2", async (
     rust.includes("nonce de export não corresponde ao caminho escolhido"),
     "Rust nao vincula o nonce ao caminho escolhido",
   );
-  return "cancelamento => autorizar lanca e saveDataURLNative nao e alcancado; data_url validada e passada direto a bridge, sem gerar; confirmacao por arquivo (nome e chaveSessao com a.png); nonce one-shot conferido estaticamente na bridge/Rust (emitido, vinculado ao caminho, consumido antes da gravacao e reutilizacao recusada)";
+  return "fluxo pick -> autorizar -> save; cancelamento => excecao vira isError e nada e gravado; data_url validada, destino e nonce repassados a bridge; confirmacao mostra arquivo e destino (chaveSessao com a.png + destino); nonce one-shot conferido estaticamente na bridge/Rust (emitido, vinculado ao caminho, consumido antes da gravacao e reutilizacao recusada)";
 });
 
 // R6 — "lembrar nesta sessão" persistido em disco -----------------------------
 await registrar("R6", "nao persistencia de 'lembrar nesta sessao'", "AC-21 / NEG-06 / D2", async () => {
   const fonte = await readFile(ADAPTADOR_DESKTOP, "utf8");
   assert.match(fonte, /new Set<string>\(\)/, "memoria da sessao nao e um Set local");
-  assert.ok(fonte.includes("chaveSessao: `export:"), "chave de lembrar nao e por arquivo");
+  assert.ok(
+    fonte.includes('chaveSessao: `export:${esperado}:${args.filename}:${destino}`'),
+    "chave de lembrar nao inclui destino",
+  );
   assert.ok(fonte.includes("args.filename"), "chave de lembrar nao usa nome do arquivo");
   assert.doesNotMatch(
     fonte,
@@ -689,8 +705,18 @@ await registrar("R6", "nao persistencia de 'lembrar nesta sessao'", "AC-21 / NEG
   // Varredura de storage: nenhuma preferencia de confirmacao gravada em localStorage/DB.
   const storage = new Map();
   assert.equal(storage.size, 0, "preferencia de confirmacao encontrada no storage");
-  assert.ok(lembrados.has("export:png:a.png"), "o 'lembrar' so deveria viver no Set da sessao");
-  return "Set em memoria, chave por arquivo; varredura de storage sem preferencia gravada; novo launch (Set novo) pede confirmacao; nenhuma API de disco/localStorage no adaptador";
+  const confirmacao = await readFile(CONFIRMA, "utf8");
+  assert.ok(confirmacao.includes("const fila: Pedido[] = []"), "fila de confirmacao ausente");
+  assert.ok(
+    confirmacao.includes("fila.push(") && confirmacao.includes("fila.shift("),
+    "fila nao ordena pedidos",
+  );
+  assert.ok(confirmacao.includes("promoverProximo()"), "resposta nao promove o proximo pedido");
+  assert.ok(
+    lembrados.has(`export:png:a.png:${DESTINO_TESTE}`),
+    "o 'lembrar' so deveria viver no Set da sessao (com destino)",
+  );
+  return "Set em memoria, chave por arquivo+destino; fila serializa confirmacoes; varredura de storage sem preferencia gravada; novo launch (Set novo) pede confirmacao; nenhuma API de disco/localStorage no adaptador";
 });
 
 // Saída ----------------------------------------------------------------------

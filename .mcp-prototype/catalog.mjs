@@ -3,14 +3,20 @@
  *
  * Implementação própria: somente o protocolo MCP público (2026-07-28 com
  * compatibilidade legada) e a API já existente do OpenDesign. Nenhum código,
- * texto, nome de arquivo ou string do Drift (GPLv3) foi copiado — ver
+ * texto, nome de arquivo ou string de terceiros foi copiado — ver
  * docs/mcp-planejamento.md.
  */
 
 export const SERVER_INFO = Object.freeze({ name: "opendesign-local", version: "0.1.0-prototype" });
 
 /** Versões que o núcleo entende. A primeira é a preferida (moderna). */
-export const SUPPORTED_VERSIONS = Object.freeze(["2026-07-28", "2025-11-25", "2025-06-18"]);
+export const SUPPORTED_VERSIONS = Object.freeze([
+  "2026-07-28",
+  "2025-11-25",
+  "2025-06-18",
+  "2025-03-26",
+  "2024-11-05",
+]);
 export const MODERN_VERSIONS = Object.freeze(["2026-07-28"]);
 
 export const TOOLBOXES = Object.freeze([

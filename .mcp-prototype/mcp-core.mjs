@@ -6,9 +6,9 @@
  *
  *   - 2026-07-28 (preferida): stateless, `server/discover`, sem `initialize`,
  *     versão/capas em `_meta`, `resultType` nas respostas e `ttlMs`/`cacheScope`
- *     em `tools/list`. Exige os headers Mcp-Method/Mcp-Name no transporte HTTP.
- *   - 2025-11-25 / 2025-06-18 (legadas): handshake `initialize` +
- *     `notifications/initialized`, sem `resultType`.
+ *     em `tools/list`. Headers Mcp-Method/Mcp-Name opcionais no HTTP; validados se presentes.
+ *   - 2025-11-25 / 2025-06-18 / 2025-03-26 / 2024-11-05 (legadas): handshake
+ *     `initialize` + `notifications/initialized`, sem `resultType`.
  *
  * O token NUNCA entra aqui: o transporte o mantém e injeta `secrets` para uma
  * passagem final de redação antes de qualquer texto sair do servidor.
@@ -165,13 +165,16 @@ export function createCore({ backend, sessionId = "sess-local", transport = "std
   }
 
   function checarHeaders(msg, ctx, tr) {
-    // Headers MCP são obrigatórios apenas no Streamable HTTP (spec 2026-07-28).
+    // Mcp-Method/Mcp-Name são extensões do protótipo 2026-07-28; validamos se presentes.
     if (tr !== "http" || !ctx.headers) return null;
     const h = ctx.headers;
     const method = h["mcp-method"] ?? h["Mcp-Method"];
     const name = h["mcp-name"] ?? h["Mcp-Name"];
-    if (typeof method !== "string" || method !== msg.method || typeof name !== "string" || !name.trim()) {
-      return { code: ERRO.HEADER, message: "HeaderMismatch: Mcp-Method/Mcp-Name obrigatórios e coerentes" };
+    if (typeof method === "string" && method !== msg.method) {
+      return { code: ERRO.HEADER, message: "HeaderMismatch: Mcp-Method não confere com o método" };
+    }
+    if (typeof name === "string" && !name.trim()) {
+      return { code: ERRO.HEADER, message: "HeaderMismatch: Mcp-Name vazio" };
     }
     return null;
   }
@@ -249,22 +252,25 @@ export function createCore({ backend, sessionId = "sess-local", transport = "std
     }
   }
 
-  /** Trata uma mensagem JSON-RPC. Notificações (sem id) retornam `null`. */
+  /** Trata uma mensagem JSON-RPC. Toda `notifications/*` é aceita silenciosamente; só requisições retornam resposta. */
   async function handle(msg, ctx = {}) {
     if (!msg || typeof msg !== "object" || msg.jsonrpc !== "2.0" || typeof msg.method !== "string") {
       return respostaErro(msg?.id ?? null, ERRO.PARAMS, "Mensagem JSON-RPC inválida");
     }
+
+    // Notificações não têm versão negociada própria: são aceitas silenciosamente.
+    // Alguns clientes MCP enviam `notifications/initialized` COM `id` (fora do
+    // spec); antes isso caía no `default` e virava -32601 Method not found.
+    // O reconhecimento pelo prefixo vem ANTES da validação de versão/headers,
+    // igual ao core integrado (src/client/mcp/mcp-core.mjs).
+    if (msg.method.startsWith("notifications/")) return null;
 
     const ehNotificacao = !("id" in msg);
     const tr = ctx.transport ?? transport;
     const id = msg.id ?? null;
     const ctxInterno = { ...ctx, id, transport: tr };
 
-    // Notificações não têm versão negociada própria; responder não faz sentido.
-    if (ehNotificacao) {
-      if (msg.method.startsWith("notifications/")) return null;
-      return null;
-    }
+    if (ehNotificacao) return null;
 
     const version = versionDaMensagem(msg, ctxInterno);
     if (!SUPPORTED_VERSIONS.includes(version)) {
@@ -284,7 +290,10 @@ export function createCore({ backend, sessionId = "sess-local", transport = "std
         });
 
       case "initialize": {
-        // Somente versões legadas usam este método.
+        // Removido em 2026-07-28; mantido só para clientes legados.
+        if (MODERN_VERSIONS.includes(version)) {
+          return respostaErro(id, ERRO.METHOD, `Method not found: ${msg.method}`);
+        }
         return respostaOk(id, version, {
           protocolVersion: version,
           capabilities: { tools: { listChanged: false } },

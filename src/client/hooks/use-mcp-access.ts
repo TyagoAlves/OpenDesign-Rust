@@ -18,6 +18,8 @@ export interface McpAccess {
   stdioSnippet: string;
   httpSnippet: string;
   notice: string | null;
+  autoStart: boolean;
+  setAutoStart: (value: boolean) => void;
   enable: () => Promise<void>;
   disable: () => Promise<void>;
   retry: () => Promise<void>;
@@ -29,7 +31,7 @@ function snippetHttp(token: string): string {
       opendesign: {
         transport: "http",
         endpoint: HTTP_ENDPOINT,
-        headers: { Authorization: `Bearer ${token}` },
+        env: { OPENDESIGN_MCP_TOKEN: token },
       },
     },
   }, null, 2);
@@ -58,17 +60,29 @@ export function useMcpAccess(): McpAccess {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [stdioCommand, setStdioCommand] = useState("OpenDesign.exe");
   const [notice, setNotice] = useState<string | null>(null);
+  // AC-13/MCP-03: intenção só em memória; nunca persistida.
+  const [autoStart, setAutoStart] = useState(false);
   const ativoRef = useRef(false);
+  const estadoAnteriorRef = useRef<McpStatusValue>("off");
 
   const refresh = useCallback(async () => {
     try {
       const status = await mcpStatus();
       if (!status.active) {
         ativoRef.current = false;
+        if (estadoAnteriorRef.current === "connected") {
+          setNotice(tr("Agente desconectado."));
+        }
+        estadoAnteriorRef.current = "off";
+        setAutoStart(false);
         setState("off");
         return;
       }
       ativoRef.current = true;
+      if (estadoAnteriorRef.current === "connected" && status.status === "waiting") {
+        setNotice(tr("Agente desconectado."));
+      }
+      estadoAnteriorRef.current = status.status;
       setState(status.status);
       if (status.sessionId) setSessionId(status.sessionId);
     } catch {
@@ -91,22 +105,28 @@ export function useMcpAccess(): McpAccess {
       setToken(resultado.token);
       setSessionId(resultado.sessionId);
       setStdioCommand(resultado.stdioCommand || "OpenDesign.exe");
+      estadoAnteriorRef.current = resultado.status;
       setState(resultado.status);
     } catch (erro) {
+      estadoAnteriorRef.current = "off";
       setState(estadoDoErro(erro));
+      setAutoStart(false);
       setNotice(tr("Não foi possível iniciar o serviço local."));
     }
   }, []);
 
   const disable = useCallback(async () => {
+    const haviaToken = token !== null;
     try { await mcpStop(); } catch { /* já parado */ }
     limparCoreSafe();
     ativoRef.current = false;
+    estadoAnteriorRef.current = "off";
     setState("off");
     setToken(null);
     setSessionId(null);
-    setNotice(null);
-  }, []);
+    setAutoStart(false);
+    setNotice(haviaToken ? tr("Token revogado.") : null);
+  }, [token]);
 
   const retry = useCallback(async () => {
     await disable();
@@ -126,6 +146,8 @@ export function useMcpAccess(): McpAccess {
     stdioSnippet: snippets.stdio,
     httpSnippet: snippets.http,
     notice,
+    autoStart,
+    setAutoStart,
     enable,
     disable,
     retry,

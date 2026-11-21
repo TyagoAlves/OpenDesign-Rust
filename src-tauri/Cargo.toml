@@ -1,10 +1,10 @@
 [package]
 name = "app"
-version = "0.1.0"
+version = "1.1.0-1"
 description = "OpenDesign - local design editor for social media graphics"
-authors = ["you"]
-license = ""
-repository = ""
+authors = ["TyagoAlves"]
+license = "MIT"
+repository = "https://github.com/TyagoAlves/OpenDesign-Rust"
 edition = "2024"
 rust-version = "1.90"
 

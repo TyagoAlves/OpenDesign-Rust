@@ -1,6 +1,6 @@
-# MCP local do OpenDesign — planejamento (protótipo V1)
+# MCP local do OpenDesign — planejamento (V1)
 
-**Status:** proposta + protótipo isolado. Nada disso está integrado ao app, ao build, ao `README`, ao CI, ao `Release/`, à landing nem ao `gh-pages`. Sem commit, push, tag, release ou publicação.
+**Status:** proposta executada: o protótipo isolado e a integração ao app estão na árvore de trabalho sob Gate 2 **`BLOQUEADO — não PRONTO`** (`docs/mcp-qa.md` §8; receita em `docs/mcp-gate2-preparacao.md`). Não há build/CI pareado, baseline nova, item 8, smoke da matriz integrada nem autorização de publicação. `README`, CI, `Release/`, landing e `gh-pages` não foram tocados; nenhuma publicação nova, commit, push, tag ou release.
 
 **Autoria/licença:** implementação própria, em TypeScript/JavaScript, sobre o protocolo MCP público e sobre a API já existente do OpenDesign. O Drift é GPLv3 e o OpenDesign é MIT: **nenhum código, texto, nome de arquivo ou string do repositório do Drift foi copiado**. A inspiração se limita ao comportamento observável (servidor local, desligado por padrão, token por sessão, stdio/HTTP) e ao protocolo MCP, que é público.
 
@@ -18,7 +18,7 @@ Oferecer a agentes de IA uma forma **local, explícita e auditável** de usar o 
 4. Reaproveitar o que já existe — `local-db.ts`, rotas `/api/*` e a bridge Tauri — sem duplicar regras de negócio.
 5. Nenhuma dependência npm nova.
 
-**Fora de escopo desta proposta:** publicação, installer, alteração de `package.json`, CI, `README`, landing, `gh-pages`, mudanças em `src/` e `src-tauri/`, e qualquer alteração que afete o gate 78/78 ou o `pnpm test` 17/17.
+**Fora de escopo nesta etapa:** publicação, installer, CI, `README`, landing, `gh-pages`, `Release/` e qualquer alteração ao gate 78/78 ou ao `pnpm test` 17/17. As mudanças em `src/`, `src-tauri/` e no catálogo já existem na árvore de trabalho como integração Gate 2, sem build pareado; nada aqui autoriza promovê-las.
 
 ---
 
@@ -33,20 +33,20 @@ Oferecer a agentes de IA uma forma **local, explícita e auditável** de usar o 
 | `localApi(method, path, body)` | `src/client/lib/local-db.ts` | despacho local SQLite no desktop, sem HTTP |
 | `saveDesignNative`, `loadDesignNative`, `saveDataURLNative`, `dataURLKind` | `src/client/lib/tauri-bridge.ts` | `projeto_salvar_nativo`, `snapshot_ler` nativo, export |
 | histórico de undo/redo | `src/client/hooks/use-canvas.ts` | **não** acessível pela API → undo de lote é Fase 2 |
-| Settings → Agent access | **ainda não existe** | D5: criar na Fase 1; hoje o protótipo usa `OPENDESIGN_MCP_ENABLE=1` por launch |
+| Settings → Agent access | `src/client/components/agent-access-panel.tsx` (Gate 2 integrado) | D5 entregue na árvore de trabalho; no protótipo isolado o opt-in é `OPENDESIGN_MCP_ENABLE=1` por launch |
 
 ---
 
 ## 3. Protocolo suportado
 
-O protótipo aceita **duas famílias** para não depender de qual versão o cliente agente usar:
+O núcleo (protótipo e integrado) aceita **duas famílias** para não depender de qual versão o cliente agente usar:
 
 | Família | Versões | Handshake | Particularidades |
 | --- | --- | --- | --- |
-| Moderna (preferida) | `2026-07-28` | nenhum; `server/discover` | stateless, `_meta.io.modelcontextprotocol.*`, `resultType: "complete"` em toda resposta, `ttlMs`/`cacheScope` em `tools/list`, headers `Mcp-Method` e `Mcp-Name` no HTTP |
-| Legada | `2025-11-25`, `2025-06-18` | `initialize` + `notifications/initialized` | sem `resultType`, `protocolVersion` devolvido no `initialize` |
+| Moderna (preferida) | `2026-07-28` | nenhum; `server/discover` | stateless, `_meta.io.modelcontextprotocol.*`, `resultType: "complete"` em toda resposta, `ttlMs`/`cacheScope` em `tools/list`, headers opcionais `Mcp-Method` e `Mcp-Name` no HTTP (validados se presentes) |
+| Legada | `2025-11-25`, `2025-06-18`, `2025-03-26`, `2024-11-05` | `initialize` + `notifications/initialized` | sem `resultType`, `protocolVersion` devolvido no `initialize` |
 
-Detalhes implementados no núcleo (`.mcp-prototype/mcp-core.mjs`):
+Detalhes implementados nos dois núcleos (`.mcp-prototype/mcp-core.mjs` e `src/client/mcp/mcp-core.mjs`):
 
 - `server/discover` obrigatório; `tools/list`, `tools/call`; `initialize` só para legado.
 - Ordem determinística das ferramentas (cache de cliente).
@@ -54,25 +54,28 @@ Detalhes implementados no núcleo (`.mcp-prototype/mcp-core.mjs`):
 - Ferramenta desconhecida → erro JSON-RPC `-32602`; método desconhecido → `-32601`; versão não suportada → `-32022`; header inconsistente → `-32020`.
 - Falha de execução (inclusive erro do backend) → resultado com `isError: true`, não erro de protocolo — o modelo consegue se corrigir.
 - Redação profunda de segredos em `content` **e** `structuredContent`.
+- Comportamento canônico de notificações: toda `notifications/*` — com ou sem `id` — é aceita silenciosamente pelo núcleo (`null`), antes da validação de versão e headers. No HTTP o `null` vira `202 Accepted` sem corpo (`src-tauri/src/mcp/http.rs:256-262`); nunca `-32601`.
 
-> Nota de compatibilidade: a spec 2026-07-28 removeu o GET de stream e as sessões de protocolo (`Mcp-Session-Id`). O transporte HTTP do protótipo expõe apenas `POST /mcp` e devolve `405` para outros métodos. Não há `initialize` no caminho moderno.
+> Nota de compatibilidade: a spec 2026-07-28 removeu o GET de stream e as sessões de protocolo (`Mcp-Session-Id`). Os transportes HTTP (protótipo e integrado) expõem apenas `POST /mcp` e devolvem `405` para outros métodos. Não há `initialize` no caminho moderno.
 
 ---
 
-## 4. Arquitetura do protótipo
+## 4. Arquitetura (protótipo e integração)
 
 ```
 .mcp-prototype/
   catalog.mjs            catálogo V1: 6 toolboxes, 15 ferramentas, schemas
   mcp-core.mjs           JSON-RPC, negociação, validação, redação, tools/list|call
   backend-dev-http.mjs   adaptador HTTP -> API local em 127.0.0.1:8787 (somente dev — D1)
-  backend-tauri.ts       esboço Fase 2 -> localApi() (D1) + tauri-bridge.ts (não compila hoje)
+  backend-tauri.ts       esboço -> localApi() (D1) + tauri-bridge.ts; na integração é src/client/mcp/backend-tauri.ts
   server-stdio.mjs       transporte stdio (uma mensagem por linha)
   server-http.mjs        transporte Streamable HTTP em 127.0.0.1, Bearer + timingSafeEqual
   smoke.mjs              16 asserções, sem dependências e sem servidor real
 ```
 
 O núcleo não sabe nada sobre transporte nem sobre token. O transporte HTTP mantém o segredo e o injeta como `secrets` para redação; o stdio não recebe token (o limite de confiança é o processo pai).
+
+Na integração Gate 2 os mesmos papéis são ocupados por `src/client/mcp/{mcp-core.mjs,catalog.mjs,backend-tauri.ts,confirm.ts,bridge.ts}`, `src/client/hooks/use-mcp-access.ts`, `src/client/components/agent-access-panel.tsx` e `src-tauri/src/mcp/{http.rs,stdio.rs}`. Catálogo e protocolo são idênticos aos do protótipo; o que muda é o backend e o ciclo de vida do token, gerado pelo app.
 
 ### Catálogo V1 (15 ferramentas)
 
@@ -93,45 +96,45 @@ O núcleo não sabe nada sobre transporte nem sobre token. O transporte HTTP man
 
 ## 5. Segurança
 
-| Controle | Como está no protótipo | Como fica na Fase 1 |
+| Controle | Protótipo isolado | Integração Gate 2 (árvore de trabalho) |
 | --- | --- | --- |
 | Bind | `127.0.0.1:8788`, **porta fixa**, nunca `0.0.0.0` | mesma porta fixa; se ocupada, falha explícita, sem fallback |
 | Opt-in | `OPENDESIGN_MCP_ENABLE=1` por launch; sem isso o processo encerra | D5: toggle em Settings → Agent access, **sem persistência** entre launches |
-| Token | `OPENDESIGN_MCP_TOKEN` por env; servidor falha fechado se ausente/curto | gerado pela app a cada launch com `randomBytes(32)`, passado por env ao filho |
+| Token | `OPENDESIGN_MCP_TOKEN` por env; servidor falha fechado se ausente/curto | gerado pela app a cada launch com `randomBytes(32)`, passado por `env` ao cliente no snippet |
 | Comparação | `timingSafeEqual`, com checagem de tamanho | igual |
-| Exposição | nunca em stdout/stderr/logs/URL; rejeitado em query; `catalog_status` mostra só ID público | igual + logs de auditoria sem o valor |
-| Headers | `Mcp-Method`/`Mcp-Name` obrigatórios no HTTP e conferidos com o método da mensagem | igual |
+| Exposição | nunca em stdout/stderr/logs/URL; rejeitado em query; `catalog_status` mostra só ID público | igual, inclusive no snippet da UI (`env`, nunca `argv`/`Authorization`/URL) |
+| Headers | `Mcp-Method`/`Mcp-Name` opcionais no HTTP; se enviados, `Mcp-Method` é conferido com o método da mensagem e `Mcp-Name` não pode ser vazio | igual |
 | Body | limite de 40 MB; `cache-control: no-store`; sem CORS | igual |
-| Backend | D1: HTTP só no dev, apenas `http://127.0.0.1` e sem token MCP repassado à API | desktop usa `localApi()` direto |
+| Backend | D1: HTTP de **dados** só no dev, apenas `http://127.0.0.1` e sem token MCP repassado à API | desktop usa `localApi()` direto; o HTTP em 8788 é o **transporte MCP** (D3), não o backend de dados |
 
-Risco residual: um processo local com o token pode agir como o usuário. Por isso o toggle é explícito e operações de escrita/export passam por consentimento na UI na Fase 2.
+Risco residual: um processo local com o token pode agir como o usuário. Por isso o toggle é explícito e `mcp_exportar` passa por consentimento por arquivo na UI (D2, já no Gate 2). Escrita de projeto não tem consentimento por arquivo nesta V1: `templates_preencher` grava com `save:true` (D4) e `projeto_salvar` com `id` sobrescreve pela API local (lacuna registrada em `docs/mcp-qa.md` §8.3).
 
-**AC-13…22 no protótipo:** AC-13 = nenhuma preferência persistida; AC-14 = 6 caixas/15 tools; AC-15 = token por `env`, query rejeitada e redação profunda; AC-16 = `127.0.0.1:8788` fixo, erro se ocupado, sem fallback; AC-17 = núcleo único para stdio e HTTP; AC-18 = nenhuma CSP/capability alterada; AC-19 = HTTP só no dev, desktop por `localApi()`; AC-20 = `save:true` exigido no schema e forçado no envio; AC-21 = export por arquivo com "lembrar" só em memória; AC-22 = nenhuma tool de lote. `snapshot_ler` expõe `offset` consumível e devolve hash do conteúdo para conferir o total.
+**AC-13…22 nos dois núcleos:** AC-13 = nenhuma preferência persistida; AC-14 = 6 caixas/15 tools; AC-15 = token por `env`, query rejeitada e redação profunda; AC-16 = `127.0.0.1:8788` fixo, erro se ocupado, sem fallback; AC-17 = núcleo único para stdio e HTTP; AC-18 = nenhuma CSP/capability alterada; AC-19 = HTTP só no dev, desktop por `localApi()`; AC-20 = `save:true` exigido no schema e forçado no envio; AC-21 = export por arquivo com "lembrar" só em memória; AC-22 = nenhuma tool de lote. `snapshot_ler` expõe `offset` consumível e devolve hash do conteúdo para conferir o total.
 
 ---
 
 ## 6. Plano por fases
 
-### Fase 0 — Protótipo isolado (concluída nesta entrega)
+### Fase 0 — Protótipo isolado (concluída)
 - [x] Catálogo, núcleo de protocolo e dois transportes em `.mcp-prototype/`.
 - [x] Smoke 16/16 sem dependências.
-- [x] `pnpm test` 17/17 inalterado; nenhum arquivo de produção tocado.
+- [x] `pnpm test` 17/17 inalterado; nenhum arquivo de produção tocado naquela entrega.
 - **Critério de saída:** protótipo funciona e não altera gate nem testes. ✅
 
-### Fase 1 — Fundação no app (a autorizar)
-- Criar **Settings → Agent access** (D5): toggle **por sessão**, texto claro sobre o que é exposto, e botão "copiar comando".
-- Gerar token por launch (`randomBytes(32)`) e iniciar o filho HTTP com env; matar o filho ao fechar a app.
-- Publicar o ID público da sessão na UI (nunca o token).
-- Backend canônico já definido (D1): **desktop usa `localApi()`**; HTTP fica somente no desenvolvimento. Ligar o adaptador desktop.
-- Manter **stdio + HTTP na V1** (D3), ambos com o mesmo bind local.
-- Adicionar testes do núcleo ao conjunto existente **sem mudar o total 17/17 sem autorização** — preferir arquivo de teste separado e rodá-lo à parte até o Tyago aprovar integração.
-- **Critério de saída:** opt-in visível, token rotacionado a cada launch, desligamento ao fechar, zero dependências novas, testes antigos intactos.
+### Fase 1 — Fundação no app (entregue na árvore de trabalho; Gate 2 **BLOQUEADO**)
+- [x] Criado **Settings → Agent access** (D5): toggle **por sessão**, texto claro sobre o que é exposto e botão "copiar comando".
+- [x] Token gerado por launch (`randomBytes(32)`) e entregue ao cliente por `env` no snippet; listener HTTP gerenciado pelo app.
+- [x] Publicado o ID público da sessão na UI (nunca o token).
+- [x] Backend canônico (D1): **desktop usa `localApi()`**; HTTP de dados fica somente no desenvolvimento. Adaptador desktop ligado.
+- [x] Mantidos **stdio + HTTP na V1** (D3), com o mesmo bind local.
+- [ ] Testes do núcleo no conjunto existente: `package.json` segue com 17 testes; nenhum `*.test.*` cobre MCP (AC-10 verde não cobre integração).
+- **Critério de saída:** implementado na árvore de trabalho; **não** significa matriz executada nem gate aprovado — ver `docs/mcp-qa.md` §8.
 
-### Fase 2 — Desktop, export e consentimento
-- Adaptador `backend-tauri.ts` efetivo: `projeto_salvar_nativo`, `snapshot_ler` `origem:"nativo"`, `export_salvar_png/pdf`.
-- Export **não gera** o PNG/PDF: o agente só salva um data URL que o editor já produziu. Diálogo nativo (`pick_save_path` + `nonce`) com **confirmação por arquivo** e opção **"lembrar nesta sessão"** (D2). O "lembrar" vale apenas para o processo atual: nunca persiste em disco.
-- Lotes de edição com **um único undo** (D6): isso depende de expor um "commit de lote" no hook `use-canvas.ts`. Hoje o histórico é interno ao React/Fabric e inalcançável pela API → **fase 2**, não prometido na V1.
-- **Critério de saída:** operações destrutivas pedem OK; lote desfaz em um passo; bridge usada sem duplicar lógica.
+### Fase 2 — Desktop, export e consentimento (parcial: export entregue; lote/undo permanece pendente)
+- [x] Adaptador `backend-tauri.ts` efetivo: `projeto_salvar_nativo`, `snapshot_ler` `origem:"nativo"`, `export_salvar_png/pdf`.
+- [x] Export **não gera** o PNG/PDF: o agente só salva um data URL que o editor já produziu. Diálogo nativo (`pick_save_path` + `nonce`) com **confirmação por arquivo** e opção **"lembrar nesta sessão"** (D2). O "lembrar" vale apenas para o processo atual: nunca persiste em disco.
+- [ ] Lotes de edição com **um único undo** (D6): depende de expor um "commit de lote" no hook `use-canvas.ts`. O histórico é interno ao React/Fabric e inalcançável pela API → **fora da V1**, conforme `AC-07`/`NEG-04` Fase 2.
+- **Critério de saída:** export com OK por arquivo entregue; lote/undo segue como **MANUAL/PENDENTE** até exposição e decisão explícita.
 
 ### Fase 3 — Hardening e operação
 - Rate limiting por sessão e limites por ferramenta.
@@ -152,10 +155,10 @@ Risco residual: um processo local com o token pode agir como o usuário. Por iss
 | Porta ocupada / conflito com o dev server | Falha de init | porta fixa 8788 (separada do dev 8787); erro explícito no init, sem fallback |
 | Cliente usar versão antiga | Incompatibilidade de handshake | aceitar `2025-11-25`/`2025-06-18` com `initialize`; moderno sem handshake |
 | `canvas_json` muito grande | Memória/CPU | limite de body 40 MB e limite de amostra em `snapshot_ler` |
-| Dois backends divergirem (HTTP vs SQLite) | Comportamento inconsistente | D1 resolvida: desktop usa `localApi()`, HTTP só no dev; contrato único de tool → rota |
+| Dois backends divergirem (HTTP vs SQLite) | Comportamento inconsistente | D1 resolvida: desktop usa `localApi()`, **backend HTTP de dados** só no dev; o HTTP em 8788 é transporte MCP (D3); contrato único de tool → rota |
 | Undo de lote prometido e não entregue | Frustração | D6: explicitamente fase 2; V1 não expõe tool de lote |
 | Reaproveitar código do Drift | Contaminação GPLv3 | implementação própria; protocolo público; nenhum arquivo/texto copiado |
-| Mexer em áreas proibidas | Quebrar gate/QA | escrita restrita a `docs/mcp-planejamento.md` e `.mcp-prototype/` |
+| Mexer em áreas proibidas | Quebrar gate/QA | nesta etapa, escrita restrita às correções P1–P4 e ao alinhamento documental; `Release/`, `dist/`, `target/`, `.pages-wt/`, CSP, capabilities e catálogo intocados |
 
 ---
 
@@ -169,16 +172,16 @@ As seis decisões pendentes foram respondidas uma a uma e **todas seguiram a rec
 | **D2** | Consentimento do export | Confirmação **por arquivo**, com opção **"lembrar nesta sessão"** (sem persistência) | Fase 2, riscos; `backend-tauri.ts` |
 | **D3** | Transportes na V1 | **stdio + HTTP**, com o mesmo bind local | §4, Fase 1; `server-stdio.mjs` e `server-http.mjs` já existem |
 | **D4** | `templates_preencher` | **`save:true` sempre**; cria novo design, nunca sobrescreve o template de origem | §4, riscos; `catalog.mjs` e ambos os backends |
-| **D5** | Settings → Agent access | Criar na **Fase 1**, antes de qualquer integração | §2, §5, Fase 1 |
+| **D5** | Settings → Agent access | Criado na integração Gate 2 (árvore de trabalho, **BLOQUEADO**) | §2, §5, Fase 1 |
 | **D6** | Undo de lote | **Fase 2**; V1 não promete lote com undo único | §2, Fase 2, riscos; nenhuma tool de lote no catálogo |
 
-**Efeito no protótipo:** nenhuma reescrita de protocolo. Ajuste apenas no esboço `backend-tauri.ts` para explicitar D1 (desktop via `localApi()`) e D2 (confirmação por arquivo com "lembrar nesta sessão" em memória). Os transportes e o catálogo já atendiam D3 e D4. Nenhuma implementação de produção foi iniciada.
+**Efeito no protótipo:** nenhuma reescrita de protocolo. O esboço `backend-tauri.ts` explicita D1 (desktop via `localApi()`) e D2 (confirmação por arquivo com "lembrar nesta sessão" em memória); transportes e catálogo já atendiam D3 e D4. Na integração, as seis decisões estão no código da árvore de trabalho sob Gate 2 bloqueado: D1/D2/D3/D4/D5 implementados, D6 fora da V1. Nada disso foi publicado.
 
 ---
 
 ## 9. Validação desta entrega
 
-Comandos executados **sem** alterar arquivos de produção:
+Comandos **históricos** da entrega do protótipo isolado — não são evidência do Gate 2. A revalidação local desta etapa está em `docs/mcp-qa.md` §8.3 e o plano de validação futura em `docs/mcp-gate2-preparacao.md`:
 
 ```
 node .mcp-prototype/smoke.mjs     -> 5 amostras (uma tool por caixa não-catálogo) + SMOKE OK — 16/16
@@ -192,7 +195,7 @@ declara `dimensoes`, `bytes_decodificados` e `semantica` de pass-through (a tool
 não renderiza o design); `templates_preencher` declara `operacao` e `destino_id`.
 ```
 
-O gate de rastreabilidade (78/78) não foi recalculado porque nenhum binário, `dist/`, `Release/`, CI ou landing foi tocado — permanece vigente como estava.
+O gate de rastreabilidade (78/78) segue **sem baseline nova**: o par local antigo é `75/78` e inválido (exe↔`dist/` dessincronizados), não é "ajuste de expectativa". Nenhum binário, `dist/`, `Release/`, CI ou landing foi promovido nesta etapa; ver `docs/mcp-qa.md` §8.3 e `docs/mcp-gate2-preparacao.md` §5.
 
 ---
 
@@ -201,4 +204,4 @@ O gate de rastreabilidade (78/78) não foi recalculado porque nenhum binário, `
 - `docs/mcp-planejamento.md` — este documento.
 - `.mcp-prototype/catalog.mjs`, `mcp-core.mjs`, `backend-dev-http.mjs`, `backend-tauri.ts`, `server-stdio.mjs`, `server-http.mjs`, `smoke.mjs`.
 
-Nada mais foi escrito. Nenhum commit, push, tag, release ou publicação.
+Na etapa restrita atual também foram escritos os arquivos das correções P1–P4 e o plano `docs/mcp-gate2-preparacao.md`. Nenhum commit, push, tag, release, deploy ou publicação nova; Gate 2 permanece `BLOQUEADO — não PRONTO`.

@@ -15,6 +15,7 @@ import {
   saveDesignNative,
   loadDesignNative,
   saveDataURLNative,
+  pickSavePath,
   dataURLKind,
   type DesignSnapshot,
   type StoredDesign,
@@ -30,6 +31,7 @@ export interface PedidoConfirmacao {
   tipo: "export_png" | "export_pdf" | "escrita";
   descricao: string;
   arquivo: string;
+  destino?: string;
   chaveSessao?: string;
 }
 
@@ -159,13 +161,31 @@ export function createTauriBackend(confirmar: Confirmador): McpBackend {
         const kind = dataURLKind(args.data_url);
         const esperado = name === "export_salvar_png" ? "png" : "pdf";
         if (kind !== esperado) throw new Error(`data_url não é um ${esperado.toUpperCase()} válido`);
+        const picked = await pickSavePath(args.filename, kind);
+        if (!picked.ok) {
+          throw new Error("Exportação indisponível: destino seguro não obtido; nada foi salvo.");
+        }
+        if (!picked.path || !picked.nonce) {
+          throw new Error("Exportação cancelada: nenhum destino disponível; nada foi salvo.");
+        }
+        const destino = picked.path.trim();
         await autorizar({
           tipo: esperado === "png" ? "export_png" : "export_pdf",
-          descricao: `Salvar ${esperado.toUpperCase()} em "${args.filename}"`,
+          descricao: `Salvar ${esperado.toUpperCase()} em "${destino}"`,
           arquivo: args.filename,
-          chaveSessao: `export:${esperado}:${args.filename}`,
+          destino,
+          chaveSessao: `export:${esperado}:${args.filename}:${destino}`,
         });
-        return saveDataURLNative(args.data_url, args.filename);
+        let saved;
+        try {
+          saved = await saveDataURLNative(
+            args.data_url, args.filename, picked.path, picked.nonce,
+          );
+        } catch {
+          throw new Error("Exportação indisponível: falha ao gravar; nada foi salvo.");
+        }
+        if (!saved) throw new Error("Exportação indisponível: falha ao gravar; nada foi salvo.");
+        return saved;
       }
       default:
         throw new Error(`Ferramenta desconhecida no backend Tauri: ${name}`);

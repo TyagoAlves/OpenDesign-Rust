@@ -3,7 +3,7 @@
  *
  * Implementação própria: somente o protocolo MCP público (2026-07-28 com
  * compatibilidade legada) e a API já existente do OpenDesign. Nenhum código,
- * texto, nome de arquivo ou string do Drift (GPLv3) foi copiado — ver
+ * texto, nome de arquivo ou string de terceiros foi copiado — ver
  * docs/mcp-planejamento.md.
  */
 

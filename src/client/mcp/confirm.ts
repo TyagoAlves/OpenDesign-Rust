@@ -8,16 +8,28 @@ interface Pedido {
 }
 
 let atual: Pedido | null = null;
+const fila: Pedido[] = [];
 const ouvintes = new Set<() => void>();
 
 function notificar(): void {
   for (const ouvinte of ouvintes) ouvinte();
 }
 
+function promoverProximo(): void {
+  if (atual) return;
+  const proximo = fila.shift();
+  if (!proximo) {
+    notificar();
+    return;
+  }
+  atual = proximo;
+  notificar();
+}
+
 export function pedirConfirmacao(pedido: PedidoConfirmacao): Promise<RespostaConfirmacao> {
   return new Promise((resolver) => {
-    atual = { pedido, resolver };
-    notificar();
+    fila.push({ pedido, resolver });
+    promoverProximo();
   });
 }
 
@@ -26,7 +38,7 @@ export function responderConfirmacao(resposta: RespostaConfirmacao): void {
   if (!pedido) return;
   atual = null;
   pedido.resolver(resposta);
-  notificar();
+  promoverProximo();
 }
 
 export function usePedidoConfirmacao(): PedidoConfirmacao | null {

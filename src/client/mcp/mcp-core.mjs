@@ -256,7 +256,7 @@ export function createCore({ backend, sessionId = "sess-local", transport = "std
     }
   }
 
-  /** Trata uma mensagem JSON-RPC. Notificações (sem id) retornam `null`. */
+  /** Trata uma mensagem JSON-RPC. Toda `notifications/*` é aceita silenciosamente; só requisições retornam resposta. */
   async function handle(msg, ctx = {}) {
     if (!msg || typeof msg !== "object" || msg.jsonrpc !== "2.0" || typeof msg.method !== "string") {
       return respostaErro(msg?.id ?? null, ERRO.PARAMS, "Mensagem JSON-RPC inválida");
@@ -293,7 +293,10 @@ export function createCore({ backend, sessionId = "sess-local", transport = "std
         });
 
       case "initialize": {
-        // Somente versões legadas usam este método.
+        // Removido em 2026-07-28; mantido só para clientes legados.
+        if (MODERN_VERSIONS.includes(version)) {
+          return respostaErro(id, ERRO.METHOD, `Method not found: ${msg.method}`);
+        }
         return respostaOk(id, version, {
           protocolVersion: version,
           capabilities: { tools: { listChanged: false } },

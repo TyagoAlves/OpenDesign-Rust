@@ -12,7 +12,7 @@
  *   - falha fechada: sem OPENDESIGN_MCP_TOKEN o servidor NÃO sobe;
  *   - Bearer comparado com timingSafeEqual (compra de tempo mitigada);
  *   - token nunca impresso em stdout/stderr, nunca aceito na URL/query;
- *   - headers MCP obrigatórios (Mcp-Method, Mcp-Name) e validados no núcleo;
+ *   - headers MCP opcionais (Mcp-Method, Mcp-Name); validados no núcleo se presentes;
  *   - sem CORS, sem GET de stream (removido em 2026-07-28), Cache-Control no-store;
  *   - limite de body para não aceitar canvas arbitrariamente grande.
  *
