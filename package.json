@@ -1,6 +1,6 @@
 {
   "name": "@clawnify/open-design",
-  "version": "1.0.0",
+  "version": "1.1.0-beta-mcp",
   "private": true,
   "type": "module",
   "scripts": {
