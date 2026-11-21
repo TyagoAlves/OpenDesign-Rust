@@ -1,7 +1,8 @@
 import { useMemo, useState } from "preact/hooks";
 import { tr } from "../i18n";
+import { useMcpAccess } from "../hooks/use-mcp-access";
+import type { McpStatusValue } from "../lib/mcp-tauri";
 
-type AgentState = "off" | "waiting" | "connected" | "port-error";
 type PreviewMode = "off" | "waiting" | "connected" | "stdio" | "http" | "port-error";
 
 interface Props {
@@ -9,36 +10,34 @@ interface Props {
   preview?: PreviewMode;
 }
 
-const STDIO_SNIPPET = `{
-  "mcpServers": {
-    "opendesign": {
-      "command": "<comando-do-opendesign>",
-      "args": ["--transport", "stdio"],
-      "env": { "OPENDESIGN_MCP_TOKEN": "<token-gerado-localmente>" }
-    }
-  }
-}`;
+const PLACEHOLDER = "<token-gerado-localmente>";
 
-const HTTP_SNIPPET = `{
-  "mcpServers": {
-    "opendesign": {
-      "command": "<comando-do-opendesign>",
-      "args": ["--transport", "http"],
-      "env": { "OPENDESIGN_MCP_TOKEN": "<token-gerado-localmente>" }
-    }
-  }
-}`;
-
-function makeToken() {
-  if (typeof crypto !== "undefined" && "getRandomValues" in crypto) {
-    const bytes = new Uint8Array(16);
-    crypto.getRandomValues(bytes);
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-  }
-  return "token-local-gerado";
+function previewSnippets() {
+  const stdio = {
+    mcpServers: {
+      opendesign: {
+        command: "<comando-do-opendesign>",
+        args: ["--transport", "stdio"],
+        env: { OPENDESIGN_MCP_TOKEN: PLACEHOLDER },
+      },
+    },
+  };
+  const http = {
+    mcpServers: {
+      opendesign: {
+        transport: "http",
+        endpoint: "http://127.0.0.1:8788/mcp",
+        env: { OPENDESIGN_MCP_TOKEN: PLACEHOLDER },
+      },
+    },
+  };
+  return {
+    stdio: JSON.stringify(stdio, null, 2),
+    http: JSON.stringify(http, null, 2),
+  };
 }
 
-function StatusIcon({ state }: { state: AgentState }) {
+function StatusIcon({ state }: { state: McpStatusValue }) {
   const color = state === "connected" ? "#16a34a" : state === "waiting" ? "#d97706" : state === "port-error" ? "#dc2626" : "#71717a";
   const label =
     state === "connected" ? tr('Conectado') : state === "waiting" ? tr('Aguardando') : state === "port-error" ? tr('Porta 8788 em uso') : tr('Desligado');
@@ -91,7 +90,7 @@ function SnippetBlock({
           </button>
         </div>
       </div>
-      {endpoint && <p class="agent-access-muted">{tr('Endpoint HTTP:')} <code>{endpoint}</code>{tr(', fixo. O token')} <strong>{tr('não')}</strong> {tr('aparece em URL, query ou argumentos; o campo')} <code>env</code> {tr('é a única entrega. Nenhum transporte grava o token em log.')}</p>}
+      {endpoint && <p class="agent-access-muted">{tr('Endpoint HTTP:')} <code>{endpoint}</code>{tr(', fixo. O token')} <strong>{tr('não')}</strong> {tr('aparece em URL, query ou argumentos; o campo')} <code>env</code> {tr('é o único lugar dele.')}</p>}
       {show && (
         <pre id={codeId} class="agent-access-code"><code>{code}</code></pre>
       )}
@@ -100,76 +99,57 @@ function SnippetBlock({
 }
 
 export function AgentAccessPanel({ preview }: Props) {
-  const [enabled, setEnabled] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [portError, setPortError] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+  const access = useMcpAccess();
   const [showStdio, setShowStdio] = useState(false);
   const [showHttp, setShowHttp] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
-  const forced: AgentState | null =
+  const forced: McpStatusValue | null =
     preview === "port-error" ? "port-error" :
     preview === "connected" ? "connected" :
     preview === "waiting" || preview === "stdio" || preview === "http" ? "waiting" :
     preview === "off" ? "off" : null;
 
-  const state: AgentState = forced ?? (portError ? "port-error" : !enabled ? "off" : connected ? "connected" : "waiting");
-  const isOn = state !== "off" && state !== "port-error";
-  const effectiveToken = (forced && forced !== "off" && forced !== "port-error") ? "<token-gerado-localmente>" : token;
-  const snippetsEnabled = state === "waiting" || state === "connected";
+  const state: McpStatusValue = forced ?? access.state;
+  const isOn = state === "waiting" || state === "connected";
+  const snippetsEnabled = isOn;
   const showStdioBlock = preview === "stdio" ? true : showStdio;
   const showHttpBlock = preview === "http" ? true : showHttp;
 
+  const previews = useMemo(previewSnippets, []);
+  const isPreview = !!forced && !!preview;
+  const stdioCode = isPreview ? previews.stdio : access.stdioSnippet;
+  const httpCode = isPreview ? previews.http : access.httpSnippet;
+
   const statusText =
     state === "off" ? tr('Desligado') :
-    state === "waiting" ? tr('Serviço local ativo — aguardando agente') :
+    state === "waiting" ? tr('Serviço local ativo - aguardando agente') :
     state === "connected" ? tr('Agente conectado') :
     tr('Porta 8788 em uso');
 
-  const stdioCode = useMemo(() => STDIO_SNIPPET.replace("<token-gerado-localmente>", effectiveToken ?? "<token-gerado-localmente>"), [effectiveToken]);
-  const httpCode = useMemo(() => HTTP_SNIPPET.replace("<token-gerado-localmente>", effectiveToken ?? "<token-gerado-localmente>"), [effectiveToken]);
-
-  function resetAll() {
-    setEnabled(false);
-    setConnected(false);
-    setPortError(false);
-    setToken(null);
-    setNotice(null);
-  }
+  const notice = copyNotice ?? access.notice;
 
   function handleToggle(next: boolean) {
     if (preview) return;
-    if (!next) {
-      resetAll();
-      return;
-    }
-    // Ligar acesso: gera token local, habilita snippets, passa a aguardando agente.
-    setEnabled(true);
-    setConnected(false);
-    setPortError(false);
-    setToken(makeToken());
-  }
-
-  function handleRetry() {
-    if (preview) return;
-    setPortError(false);
-    setEnabled(true);
-    setConnected(false);
-    if (!token) setToken(makeToken());
+    if (next) void access.enable();
+    else void access.disable();
   }
 
   async function handleCopy(which: "stdio" | "http") {
     const text = which === "stdio" ? stdioCode : httpCode;
+    if (!text) {
+      setCopyNotice(tr('Ligue o acesso para gerar o snippet.'));
+      return;
+    }
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
-        setNotice(tr('Snippet copiado. Cole na configuração do seu agente.'));
+        setCopyNotice(tr('Snippet copiado. Cole na configuração do seu agente.'));
       } else {
         throw new Error("no clipboard");
       }
     } catch {
-      setNotice(tr('Não foi possível copiar. Selecione o texto abaixo e copie manualmente.'));
+      setCopyNotice(tr('Não foi possível copiar. Selecione o texto abaixo e copie manualmente.'));
       if (which === "stdio") setShowStdio(true);
       else setShowHttp(true);
     }
@@ -194,9 +174,9 @@ export function AgentAccessPanel({ preview }: Props) {
             type="button"
             role="switch"
             aria-labelledby="agent-access-toggle-label"
-            aria-checked={state === "waiting" || state === "connected"}
-            class={`agent-access-switch ${state === "waiting" || state === "connected" ? "is-on" : ""}`}
-            onClick={() => handleToggle(!(state === "waiting" || state === "connected"))}
+            aria-checked={isOn}
+            class={`agent-access-switch ${isOn ? "is-on" : ""}`}
+            onClick={() => handleToggle(!isOn)}
             disabled={!!preview}
           >
             <span class="agent-access-switch__thumb" aria-hidden="true" />
@@ -220,7 +200,7 @@ export function AgentAccessPanel({ preview }: Props) {
         {state === "port-error" && (
           <div class="agent-access__error" role="alert">
             <p><strong>{tr('Porta 8788 em uso.')}</strong> {tr('Feche o processo que usa a porta e tente novamente. O OpenDesign não troca de porta.')}</p>
-            <button type="button" class="agent-access-btn" onClick={handleRetry} disabled={!!preview}>{tr('Tentar novamente')}</button>
+            <button type="button" class="agent-access-btn" onClick={() => void access.retry()} disabled={!!preview}>{tr('Tentar novamente')}</button>
           </div>
         )}
 
@@ -251,7 +231,7 @@ export function AgentAccessPanel({ preview }: Props) {
             <div class="agent-access__token-row">
               <div>
                 <p class="agent-access__label"><strong>{tr('Token')}</strong></p>
-                <p class="agent-access__hint">{tr('Entregue somente pelo campo')} <code>env</code> {tr('do snippet — nunca em comando, endereço ou log.')}</p>
+                <p class="agent-access__hint">{tr('Entregue somente pelo campo')} <code>env</code> {tr('do snippet - nunca em comando, endereço ou log.')}</p>
               </div>
             </div>
             {notice && <p class="agent-access__notice" role="status">{notice}</p>}
@@ -259,7 +239,7 @@ export function AgentAccessPanel({ preview }: Props) {
         )}
 
         <div class="agent-access__actions">
-          <button type="button" class="agent-access-btn agent-access-btn--danger" onClick={resetAll} disabled={state === "off" || !!preview}>
+          <button type="button" class="agent-access-btn agent-access-btn--danger" onClick={() => void access.disable()} disabled={state === "off" || !!preview}>
             {tr('Desligar e revogar token')}
           </button>
         </div>

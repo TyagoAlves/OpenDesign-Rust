@@ -6,11 +6,13 @@ import { useRouter } from "./hooks/use-router";
 import { Editor } from "./components/editor";
 import { Home } from "./components/home";
 import { Settings } from "./components/settings";
+import { McpConfirmDialog } from "./components/mcp-confirm-dialog";
 import { tr } from "./i18n";
 import { useFonts } from "./fonts";
 import { AppNav, reportLocation } from "@clawnify/app/client";
 import { useEffect, useRef } from "preact/hooks";
 import { isTauri, signalAppReady } from "./lib/tauri";
+import { installMcpBridge } from "./mcp/bridge";
 
 export function App() {
   const { path, navigate, designId, isSettings } = useRouter();
@@ -21,6 +23,12 @@ export function App() {
   const brandState = useBrandKits();
   const fontState = useFonts();
   const readySignaledRef = useRef(false);
+
+  // MCP: a ponte roda uma vez, fora de qualquer rota, para que as tools
+  // funcionem em Home/Editor/Settings e também no modo stdio (janela oculta).
+  useEffect(() => {
+    installMcpBridge();
+  }, []);
 
   // Tauri: sinaliza "app pronto" quando a UI inicial está utilizável (fecha o splash
   // respeitando tempo mínimo; fallback de timeout fica no Rust). No-op fora do Tauri.
@@ -113,17 +121,23 @@ export function App() {
   ) : null;
 
   if (fontState.fontsError) {
-    return <div class="flex flex-col items-center justify-center gap-3 h-full" role="alert">
-      {persistenceError}
-      <p>{fontState.fontsError}</p>
-      <button class="px-3 py-2 border rounded cursor-pointer" onClick={() => window.location.reload()}>Recarregar</button>
-    </div>;
+    return (
+      <>
+      <McpConfirmDialog />
+      <div class="flex flex-col items-center justify-center gap-3 h-full" role="alert">
+        {persistenceError}
+        <p>{fontState.fontsError}</p>
+        <button class="px-3 py-2 border rounded cursor-pointer" onClick={() => window.location.reload()}>Recarregar</button>
+      </div>
+      </>
+    );
   }
 
   // Fabric measures text during construction. Load fonts before mounting any canvas.
   if (designState.loading || fontState.fontsLoading) {
     return (
       <>
+      <McpConfirmDialog />
       {hostNav}
       <div class="flex items-center justify-center h-full bg-[#F3F4F7]">
         <div class="text-center">
@@ -139,6 +153,7 @@ export function App() {
   if (isSettings) {
     return (
       <>
+      <McpConfirmDialog />
       {hostNav}
       {persistenceError}
       <Settings navigate={navigate} />
@@ -150,6 +165,7 @@ export function App() {
   if (!designId) {
     return (
       <>
+      <McpConfirmDialog />
       {hostNav}
       {persistenceError}
       <Home
@@ -178,6 +194,7 @@ export function App() {
 
   return (
     <EditorContext.Provider value={contextValue}>
+      <McpConfirmDialog />
       {hostNav}
       {persistenceError}
       <Editor />

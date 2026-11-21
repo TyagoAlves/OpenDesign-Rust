@@ -1,9 +1,10 @@
 ﻿mod commands;
+pub mod mcp;
 
 use commands::ExportTokens;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Listener, Manager, State};
+use tauri::{AppHandle, Listener, Manager, RunEvent, State};
 
 struct SplashState {
   started: Instant,
@@ -12,8 +13,9 @@ struct SplashState {
 
 /// Fecha o splash e exibe a janela principal, respeitando tempo mínimo de exibição
 /// (~1500 ms) e garantindo execução única (chamado pelo sinal "app pronto" ou fallback).
+/// No modo stdio a janela principal fica OCULTA: o agente fala com o núcleo pela
+/// ponte IPC, não pela tela.
 fn close_splash_show_main(app: &AppHandle, state: &Mutex<SplashState>) {
-  // Calcula espera mínima sem segurar o lock durante o sleep.
   let remaining = {
     let s = match state.lock() {
       Ok(g) => g,
@@ -45,9 +47,11 @@ fn close_splash_show_main(app: &AppHandle, state: &Mutex<SplashState>) {
   if let Some(splash) = app.get_webview_window("splashscreen") {
     let _ = splash.close();
   }
-  if let Some(main) = app.get_webview_window("main") {
-    let _ = main.show();
-    let _ = main.set_focus();
+  if !mcp::is_stdio_mode() {
+    if let Some(main) = app.get_webview_window("main") {
+      let _ = main.show();
+      let _ = main.set_focus();
+    }
   }
   s.closed = true;
 }
@@ -60,6 +64,10 @@ fn app_ready(app: AppHandle, state: State<'_, Mutex<SplashState>>) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  // Estado MCP compartilhado entre comandos, threads de transporte e limpeza.
+  let mcp_state = mcp::new_shared();
+  let mcp_state_setup = mcp_state.clone();
+
   tauri::Builder::default()
     // Banco local do OpenDesign. O schema é garantido no cliente (local-db.ts)
     // com DDL idempotente (CREATE TABLE/INDEX IF NOT EXISTS), evitando falhas de
@@ -71,6 +79,7 @@ pub fn run() {
     // esse nonce one-shot, ainda não usado (autorizado pelo Tyago).
     .plugin(tauri_plugin_dialog::init())
     .manage(ExportTokens::default())
+    .manage(mcp_state.clone())
     .manage(Mutex::new(SplashState {
       started: Instant::now(),
       closed: false,
@@ -83,9 +92,24 @@ pub fn run() {
       commands::pick_save_path,
       commands::export_png,
       commands::export_pdf,
+      mcp::commands::mcp_start,
+      mcp::commands::mcp_stop,
+      mcp::commands::mcp_status,
+      mcp::commands::mcp_take_request,
+      mcp::commands::mcp_respond,
+      mcp::commands::mcp_is_stdio,
     ])
-    .setup(|app| {
-      if cfg!(debug_assertions) {
+    .setup(move |app| {
+      // Modo stdio: sem log no stdout (o plugin só entra em debug e nunca é
+      // instalado neste modo), token do env e leitura de stdin já no bootstrap.
+      if mcp::is_stdio_mode() {
+        if let Some(splash) = app.get_webview_window("splashscreen") {
+          let _ = splash.close();
+        }
+        mcp::bootstrap_stdio(app.handle().clone(), mcp_state_setup.clone());
+      }
+
+      if cfg!(debug_assertions) && !mcp::is_stdio_mode() {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
             .level(log::LevelFilter::Info)
@@ -114,6 +138,16 @@ pub fn run() {
 
       Ok(())
     })
-    .run(tauri::generate_context!())
-    .expect("error while building tauri application");
+    .build(tauri::generate_context!())
+    .expect("error while building tauri application")
+    .run(move |_app, event| {
+      // Equivalente ao SIGTERM do protótipo: revoga token, fecha listener/stdin
+      // e drena pedidos. Sem isso, um disable/close deixaria porta residual.
+      match event {
+        RunEvent::Exit | RunEvent::ExitRequested { .. } => {
+          mcp::stop_all(&mcp_state);
+        }
+        _ => {}
+      }
+    });
 }
