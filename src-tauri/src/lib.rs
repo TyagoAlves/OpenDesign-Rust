@@ -68,6 +68,32 @@ pub fn run() {
   let mcp_state = mcp::new_shared();
   let mcp_state_setup = mcp_state.clone();
 
+  // Cada processo stdio precisa do SEU perfil WebView2. O identificador do app
+  // é o mesmo da GUI; sem isolamento, o WebView2 do helper disputa o diretório
+  // e falha com HRESULT 0x800700AA quando a janela principal já está aberta.
+  // Sobrescrever SOMENTE `localData` isola o WebView2 sem mudar `app_data_dir`
+  // (onde fica o SQLite): o helper continua vendo o banco real da GUI.
+  let mut contexto = tauri::generate_context!();
+  let dir_stdio = if mcp::is_stdio_mode() {
+    let dir = std::env::temp_dir()
+      .join("opendesign-mcp-stdio")
+      .join(std::process::id().to_string());
+    if let Err(motivo) = std::fs::create_dir_all(&dir) {
+      eprintln!("MCP: nao foi possivel isolar o perfil WebView2: {}", motivo);
+      std::process::exit(4);
+    }
+    contexto.config_mut().app.app_directories_override =
+      Some(tauri::utils::config::AppDirectoriesOverride::Directories(
+        tauri::utils::config::AppDirectoryOverrides {
+          local_data: Some(dir.clone()),
+          ..Default::default()
+        },
+      ));
+    Some(dir)
+  } else {
+    None
+  };
+
   tauri::Builder::default()
     // Banco local do OpenDesign. O schema é garantido no cliente (local-db.ts)
     // com DDL idempotente (CREATE TABLE/INDEX IF NOT EXISTS), evitando falhas de
@@ -138,7 +164,7 @@ pub fn run() {
 
       Ok(())
     })
-    .build(tauri::generate_context!())
+    .build(contexto)
     .expect("error while building tauri application")
     .run(move |_app, event| {
       // Equivalente ao SIGTERM do protótipo: revoga token, fecha listener/stdin
@@ -146,6 +172,9 @@ pub fn run() {
       match event {
         RunEvent::Exit | RunEvent::ExitRequested { .. } => {
           mcp::stop_all(&mcp_state);
+          if let Some(dir) = &dir_stdio {
+            let _ = std::fs::remove_dir_all(dir);
+          }
         }
         _ => {}
       }

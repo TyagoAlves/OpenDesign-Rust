@@ -6,9 +6,11 @@
  *
  *   - 2026-07-28 (preferida): stateless, `server/discover`, sem `initialize`,
  *     versão/capas em `_meta`, `resultType` nas respostas e `ttlMs`/`cacheScope`
- *     em `tools/list`. Exige os headers Mcp-Method/Mcp-Name no transporte HTTP.
- *   - 2025-11-25 / 2025-06-18 (legadas): handshake `initialize` +
- *     `notifications/initialized`, sem `resultType`.
+ *     em `tools/list`. Aceita (mas não exige) os headers Mcp-Method/Mcp-Name.
+ *   - 2025-11-25 / 2025-06-18 / 2025-03-26 / 2024-11-05 (legadas): handshake
+ *     `initialize` + `notifications/initialized`, sem `resultType`. São as
+ *     versões usadas por clientes MCP padrão (Antigravity/Claude/Cursor), que
+ *     não enviam headers customizados.
  *
  * O token NUNCA entra aqui: o transporte o mantém e injeta `secrets` para uma
  * passagem final de redação antes de qualquer texto sair do servidor.
@@ -165,13 +167,18 @@ export function createCore({ backend, sessionId = "sess-local", transport = "std
   }
 
   function checarHeaders(msg, ctx, tr) {
-    // Headers MCP são obrigatórios apenas no Streamable HTTP (spec 2026-07-28).
+    // Mcp-Method/Mcp-Name são extensões do protótipo 2026-07-28. Clientes MCP
+    // padrão NÃO as enviam, então a ausência é permitida: validamos apenas
+    // quando o cliente opta por enviá-las. Bearer e loopback continuam no Rust.
     if (tr !== "http" || !ctx.headers) return null;
     const h = ctx.headers;
     const method = h["mcp-method"] ?? h["Mcp-Method"];
     const name = h["mcp-name"] ?? h["Mcp-Name"];
-    if (typeof method !== "string" || method !== msg.method || typeof name !== "string" || !name.trim()) {
-      return { code: ERRO.HEADER, message: "HeaderMismatch: Mcp-Method/Mcp-Name obrigatórios e coerentes" };
+    if (typeof method === "string" && method !== msg.method) {
+      return { code: ERRO.HEADER, message: "HeaderMismatch: Mcp-Method não confere com o método" };
+    }
+    if (typeof name === "string" && !name.trim()) {
+      return { code: ERRO.HEADER, message: "HeaderMismatch: Mcp-Name vazio" };
     }
     return null;
   }

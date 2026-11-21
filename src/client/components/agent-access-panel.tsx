@@ -27,7 +27,7 @@ function previewSnippets() {
       opendesign: {
         transport: "http",
         endpoint: "http://127.0.0.1:8788/mcp",
-        env: { OPENDESIGN_MCP_TOKEN: PLACEHOLDER },
+        headers: { Authorization: `Bearer ${PLACEHOLDER}` },
       },
     },
   };
@@ -90,7 +90,7 @@ function SnippetBlock({
           </button>
         </div>
       </div>
-      {endpoint && <p class="agent-access-muted">{tr('Endpoint HTTP:')} <code>{endpoint}</code>{tr(', fixo. O token')} <strong>{tr('não')}</strong> {tr('aparece em URL, query ou argumentos; o campo')} <code>env</code> {tr('é o único lugar dele.')}</p>}
+      {endpoint && <p class="agent-access-muted">{tr('Endpoint HTTP:')} <code>{endpoint}</code>{tr(', fixo. O token')} <strong>{tr('não')}</strong> {tr('aparece em URL, query ou argumentos; no HTTP ele vai no header')} <code>Authorization: Bearer</code>{tr('.')}</p>}
       {show && (
         <pre id={codeId} class="agent-access-code"><code>{code}</code></pre>
       )}
@@ -184,7 +184,7 @@ export function AgentAccessPanel({ preview }: Props) {
         </div>
 
         <div class="agent-access__warning" role="note">
-          <p><strong>{tr('Controle local.')}</strong> {tr('Sem conta, sem nuvem, sem acesso remoto. O token é como senha: não compartilhe. Ele só aparece no campo')} <code>env</code> {tr('dos snippets.')}</p>
+          <p><strong>{tr('Controle local.')}</strong> {tr('Sem conta, sem nuvem, sem acesso remoto. O token é como senha: não compartilhe. No stdio ele aparece no campo')} <code>env</code>{tr('; no HTTP, no header')} <code>Authorization</code>{tr(' dos snippets.')}</p>
         </div>
 
         <div
@@ -231,7 +231,7 @@ export function AgentAccessPanel({ preview }: Props) {
             <div class="agent-access__token-row">
               <div>
                 <p class="agent-access__label"><strong>{tr('Token')}</strong></p>
-                <p class="agent-access__hint">{tr('Entregue somente pelo campo')} <code>env</code> {tr('do snippet - nunca em comando, endereço ou log.')}</p>
+                <p class="agent-access__hint">{tr('stdio: campo')} <code>env</code>{tr('; HTTP: header')} <code>Authorization: Bearer</code>{tr(' - nunca em comando, endereço ou log.')}</p>
               </div>
             </div>
             {notice && <p class="agent-access__notice" role="status">{notice}</p>}

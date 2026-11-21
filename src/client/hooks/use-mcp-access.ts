@@ -29,7 +29,7 @@ function snippetHttp(token: string): string {
       opendesign: {
         transport: "http",
         endpoint: HTTP_ENDPOINT,
-        env: { OPENDESIGN_MCP_TOKEN: token },
+        headers: { Authorization: `Bearer ${token}` },
       },
     },
   }, null, 2);

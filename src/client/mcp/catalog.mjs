@@ -10,7 +10,13 @@
 export const SERVER_INFO = Object.freeze({ name: "opendesign-local", version: "0.1.0-prototype" });
 
 /** Versões que o núcleo entende. A primeira é a preferida (moderna). */
-export const SUPPORTED_VERSIONS = Object.freeze(["2026-07-28", "2025-11-25", "2025-06-18"]);
+export const SUPPORTED_VERSIONS = Object.freeze([
+  "2026-07-28",
+  "2025-11-25",
+  "2025-06-18",
+  "2025-03-26",
+  "2024-11-05",
+]);
 export const MODERN_VERSIONS = Object.freeze(["2026-07-28"]);
 
 export const TOOLBOXES = Object.freeze([
