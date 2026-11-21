@@ -1,5 +1,5 @@
 /*
- * OpenDesign — parallax em camadas do hero (branch gh-pages)
+ * OpenDesign — parallax em camadas do hero e das seções (branch gh-pages)
  * ---------------------------------------------------------------------------
  * Vanilla, sem dependências e sem build. As imagens ficam dentro de .hero,
  * são decorativas (aria-hidden) e não recebem cliques (pointer-events:none).
@@ -16,10 +16,12 @@
   var doc = document;
   var hero = doc.querySelector('.hero');
   var camadas = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-speed]')) : [];
+  var cenas = Array.prototype.slice.call(doc.querySelectorAll('.scene'));
 
   var MQ_DESLIGADO = '(max-width: 640px), (pointer: coarse), (orientation: landscape) and (max-height: 480px)';
   var MQ_REDUCAO = '(prefers-reduced-motion: reduce)';
   var DESLOCAMENTO_MAXIMO = 120; // px: teto para não revelar bordas das imagens
+  var DESLOCAMENTO_CENA = 40; // px: folga da camada estendida das seções
 
   var mqDesligado = window.matchMedia ? window.matchMedia(MQ_DESLIGADO) : null;
   var mqReducao = window.matchMedia ? window.matchMedia(MQ_REDUCAO) : null;
@@ -33,29 +35,44 @@
   var alturaHero = 1;
 
   function podeAnimar() {
-    return !!(camadas.length && hero && !doc.hidden &&
+    return !!((camadas.length || cenas.length) && !doc.hidden &&
       !(mqReducao && mqReducao.matches) &&
       !(mqDesligado && mqDesligado.matches));
   }
 
   function medir() {
-    alturaHero = hero.offsetHeight || 1;
+    alturaHero = hero ? (hero.offsetHeight || 1) : 1;
   }
 
   function aplicar() {
     raf = 0;
     if (!ativo || !podeAnimar()) return;
 
-    var rect = hero.getBoundingClientRect();
-    // Fora da viewport: não gasta CPU e deixa as camadas onde estão.
-    if (rect.bottom < 0 || rect.top > (window.innerHeight || doc.documentElement.clientHeight)) return;
+    var alturaViewport = window.innerHeight || doc.documentElement.clientHeight;
+    var rect = hero ? hero.getBoundingClientRect() : null;
+    // Fora da viewport: não gasta CPU e deixa as camadas do hero onde estão.
+    var heroVisivel = !!(hero && rect.bottom >= 0 && rect.top <= alturaViewport);
 
-    var progresso = Math.min(1, Math.max(0, -rect.top / alturaHero));
-    for (var i = 0; i < camadas.length; i++) {
-      var velocidade = parseFloat(camadas[i].getAttribute('data-speed'));
-      if (!isFinite(velocidade)) velocidade = 0;
-      var off = Math.round(progresso * (1 - velocidade) * DESLOCAMENTO_MAXIMO * 100) / 100;
-      camadas[i].style.transform = 'translate3d(0,' + off + 'px,0)';
+    if (heroVisivel) {
+      var progresso = Math.min(1, Math.max(0, -rect.top / alturaHero));
+      for (var i = 0; i < camadas.length; i++) {
+        var velocidade = parseFloat(camadas[i].getAttribute('data-speed'));
+        if (!isFinite(velocidade)) velocidade = 0;
+        var off = Math.round(progresso * (1 - velocidade) * DESLOCAMENTO_MAXIMO * 100) / 100;
+        camadas[i].style.transform = 'translate3d(0,' + off + 'px,0)';
+      }
+    }
+
+    // Cenas das seções: deslocamento curto e nominal, só enquanto a seção cruza a viewport.
+    for (var j = 0; j < cenas.length; j++) {
+      var cena = cenas[j];
+      var r = cena.getBoundingClientRect();
+      if (r.bottom < -80 || r.top > alturaViewport + 80) continue;
+      var p = (alturaViewport - r.top) / (alturaViewport + r.height);
+      p = Math.min(1, Math.max(0, p));
+      var fator = 0.45 + (j % 4) * 0.12;
+      var desloc = Math.round((p - 0.5) * 2 * DESLOCAMENTO_CENA * fator * 100) / 100;
+      cena.style.setProperty('--scene-shift', desloc + 'px');
     }
   }
 
@@ -78,6 +95,7 @@
     ativo = false;
     if (raf) { cancelarQuadro(raf); raf = 0; }
     for (var i = 0; i < camadas.length; i++) camadas[i].style.transform = '';
+    for (var j = 0; j < cenas.length; j++) cenas[j].style.removeProperty('--scene-shift');
   }
 
   function iniciar() {
@@ -105,7 +123,8 @@
     reiniciar: function () { parar(); aoPreferencia(); },
     parar: parar,
     aplicar: aplicar,
-    quantidade: function () { return ativo ? camadas.length : 0; }
+    quantidade: function () { return ativo ? camadas.length : 0; },
+    quantidadeCenas: function () { return ativo ? cenas.length : 0; }
   };
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', aoPreferencia);

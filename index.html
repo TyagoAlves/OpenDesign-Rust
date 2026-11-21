@@ -18,193 +18,221 @@
 <meta name="twitter:title" content="OpenDesign — o editor de design gratuito que cabe num .exe">
 <meta name="twitter:description" content="Editor de design open-source para Windows em um .exe gratuito. Local, sem conta e sem nuvem.">
 <meta name="twitter:image" content="https://tyagoalves.github.io/OpenDesign-Rust/assets/readme-banner.png">
-<meta name="theme-color" content="#FBFBFB">
+<meta name="theme-color" content="#F7F7FC">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --primary:#26251E;--primary-hover:#3B3A33;--on-primary:#fff;
-  --ink:#1A202C;--subtle:#3F4755;--muted:#39414E;--faint:#9AA1AC;
-  --canvas:#FBFBFB;--soft:#fff;--panel:#F1F1EF;--border:#E6E8EB;
-  --accent:#B5230F;--accent-ink:#8E1B08;--accent-soft:#FFF1EE;--accent-line:#FCCFC5;
-  --ok:#178A50;--warn:#B7791F;--danger:#B91C1C;
-  --night:#0F1115;--ink-inverse:#F4F5F3;--accent-inverse:#FF7A63;
-  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-full:9999px;
-  --sh-sm:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
-  --sh-md:0 8px 24px rgba(16,24,40,.10);
+  --bg:#F7F7FC;
+  --surface:#FFFFFF;
+  --surface-soft:rgba(255,255,255,.86);
+  --ink:#14132A;
+  --subtle:#4A4B65;
+  --muted:#646582;
+  --border:rgba(99,102,241,.14);
+  --border-strong:rgba(99,102,241,.28);
+  --accent:#5B3DF5;
+  --accent-hover:#482CD6;
+  --accent-soft:#EEEBFF;
+  --accent-text:#4C30DE;
+  --night:#120B38;
+  --night-2:#1E1459;
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:18px;
+  --r-xl:24px;
+  --r-full:9999px;
+  --sh-sm:0 2px 8px rgba(20,19,42,.05),0 1px 2px rgba(20,19,42,.04);
+  --sh-md:0 14px 36px rgba(34,26,90,.09),0 2px 8px rgba(20,19,42,.04);
+  --sh-lg:0 24px 60px rgba(34,26,90,.14);
   --font:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:linear-gradient(rgba(251,251,251,.84),rgba(251,251,251,.90)),var(--canvas);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.55}
+body{
+  margin:0;
+  background:
+    radial-gradient(900px 520px at 88% -6%,rgba(124,58,237,.14),transparent 62%),
+    radial-gradient(760px 460px at 8% 12%,rgba(99,102,241,.12),transparent 60%),
+    radial-gradient(880px 540px at 80% 56%,rgba(139,92,246,.10),transparent 64%),
+    var(--bg);
+  color:var(--ink);
+  font-family:var(--font);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.55;
+  overflow-x:hidden;
+}
 a{color:inherit}
-/* Foco visível: 3px e contraste alto sobre fundo claro, imagem ou véu */
-:focus-visible{outline:3px solid #102A43;outline-offset:3px;box-shadow:0 0 0 5px rgba(255,255,255,.9)}
-.skip{position:absolute;left:14px;top:-90px;z-index:100;background:#102A43;color:#fff;padding:10px 16px;border-radius:var(--r-md);font-weight:600;font-size:14px;text-decoration:none;box-shadow:var(--sh-md)}
+code{overflow-wrap:anywhere;font-family:var(--mono)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px;box-shadow:0 0 0 5px rgba(255,255,255,.92)}
+.skip{position:absolute;left:14px;top:-90px;z-index:100;background:var(--accent);color:#fff;padding:10px 16px;border-radius:var(--r-md);font-weight:600;font-size:14px;text-decoration:none;box-shadow:var(--sh-md)}
 .skip:focus{top:12px}
 .wrap{width:min(1120px,calc(100% - 40px));margin:0 auto}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:var(--r-md);font-weight:600;font-size:14px;text-decoration:none;border:1px solid transparent;transition:transform .15s ease,background .15s ease,border-color .15s ease;white-space:nowrap}
+
+/* buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 20px;border-radius:var(--r-md);font-weight:600;font-size:14px;
+  text-decoration:none;border:1px solid transparent;cursor:pointer;
+  transition:transform .16s ease,background .16s ease,border-color .16s ease,box-shadow .16s ease;
+  white-space:nowrap;
+}
 .btn:hover{transform:translateY(-1px)}
-.btn--primary{background:var(--accent);color:#fff}
-.btn--primary:hover{background:var(--accent-ink)}
-.btn--dark{background:var(--primary);color:var(--on-primary)}
-.btn--dark:hover{background:var(--primary-hover)}
-.btn--ghost{background:var(--soft);border-color:var(--border);color:var(--ink)}
-.btn--ghost:hover{border-color:var(--accent-line)}
-.btn--sm{padding:9px 14px;font-size:13px}
+.btn--primary{background:linear-gradient(135deg,#6346FA,#5033EB);color:#fff;box-shadow:0 8px 20px rgba(91,61,245,.26)}
+.btn--primary:hover{background:linear-gradient(135deg,#5538EE,#4225D5);box-shadow:0 12px 26px rgba(91,61,245,.34)}
+.btn--ghost{background:var(--surface);border-color:var(--border-strong);color:var(--ink);box-shadow:var(--sh-sm)}
+.btn--ghost:hover{border-color:var(--accent);color:var(--accent-text)}
+.btn--dark-ghost{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.22);color:#fff}
+.btn--dark-ghost:hover{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.4)}
+.btn--sm{padding:8px 15px;font-size:13px;border-radius:10px}
 
-/* nav */
-.nav{position:sticky;top:0;z-index:50;background:rgba(251,251,251,.84);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
-.nav__bar{height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;font-size:16px;letter-spacing:-.02em}
-.brand img{width:24px;height:24px}
-.nav__links{display:flex;align-items:center;gap:26px;font-size:14px;font-weight:500}
-.nav__links a{text-decoration:none;color:var(--subtle)}
-.nav__links a:hover{color:var(--accent-ink)}
-.nav__end{display:flex;align-items:center;gap:12px}
-.nav__rule{width:1px;height:24px;background:var(--border)}
-.burger{display:none;background:none;border:0;padding:6px;cursor:pointer}
+/* navbar */
+.nav{position:sticky;top:0;z-index:50;background:rgba(247,247,252,.84);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav__bar{height:68px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:700;font-size:17px;letter-spacing:-.025em;color:var(--ink)}
+.brand__badge{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#6D4AFF,#4B2CE8);display:inline-flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 12px rgba(91,61,245,.3)}
+.nav__links{display:flex;align-items:center;gap:28px;font-size:14px;font-weight:500}
+.nav__links a{text-decoration:none;color:var(--subtle);transition:color .15s ease}
+.nav__links a:hover{color:var(--accent-text)}
+.nav__end{display:flex;align-items:center;gap:10px}
+.burger{display:none;background:none;border:1px solid var(--border-strong);border-radius:9px;padding:7px;cursor:pointer;color:var(--ink)}
 
-/* preview warning */
-.notice{background:var(--accent-soft);border-bottom:1px solid var(--accent-line);color:#5c1c11;font-size:13px}
-.notice__inner{display:flex;align-items:flex-start;gap:10px;padding:11px 0}
-.notice b{color:var(--accent-ink)}
-.notice__tag{flex:none;background:var(--accent);color:#fff;border-radius:var(--r-full);font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 9px;text-transform:uppercase;margin-top:1px}
+/* eyebrow pill */
+.pill{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:11px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--accent-text);background:var(--accent-soft);border:1px solid rgba(91,61,245,.18);
+  padding:6px 12px;border-radius:var(--r-full);
+}
 
 /* hero */
-.hero{padding:76px 0 56px;background:radial-gradient(900px 380px at 78% 0%,rgba(255,255,255,.70) 0%,rgba(251,251,251,.18) 72%)}
-.hero__grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--accent-line);padding:6px 11px;border-radius:var(--r-full)}
-h1{font-size:clamp(38px,5.2vw,62px);line-height:1.04;letter-spacing:-.045em;margin:20px 0 18px;font-weight:700}
-h1 em{font-style:normal;color:var(--accent)}
-.lede{font-size:17px;color:var(--subtle);max-width:540px;margin:0 0 28px}
+.hero{position:relative;overflow:hidden;isolation:isolate;padding:72px 0 80px}
+.hero-parallax{position:absolute;inset:0;z-index:0;pointer-events:none;user-select:none}
+.hero-wave-img{position:absolute;right:-4%;top:-6%;width:min(78%,960px);height:auto;opacity:.95}
+.hero-wave--2{position:absolute;width:460px;height:460px;left:-140px;bottom:-120px;border-radius:50%;filter:blur(56px);opacity:.45;background:radial-gradient(circle,rgba(99,102,241,.28),rgba(167,139,250,.10) 60%,transparent 75%)}
+.hero__grid{position:relative;z-index:2;display:grid;grid-template-columns:1.02fr .98fr;gap:48px;align-items:center}
+h1{font-size:clamp(38px,5vw,58px);line-height:1.05;letter-spacing:-.045em;margin:18px 0 18px;font-weight:800;color:var(--ink)}
+h1 em{font-style:normal;background:linear-gradient(135deg,#5B3DF5,#7C3AED);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:17px;color:var(--subtle);max-width:500px;margin:0 0 28px}
 .cta-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:20px;font-size:12px;color:var(--muted)}
-.meta span{display:flex;align-items:center;gap:6px}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--ok);display:inline-block}
-.dot--warn{background:var(--warn)}
+.meta{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:22px;font-size:13px;color:var(--muted);font-weight:500}
+.meta span{display:inline-flex;align-items:center;gap:6px}
+.meta svg{color:var(--accent-text);flex:none}
 
-/* mock window */
-.mock{position:relative;background:var(--night);border-radius:var(--r-xl);padding:10px;box-shadow:0 30px 70px rgba(15,17,21,.24);border:1px solid #2b2e35}
-.mock__bar{display:flex;align-items:center;gap:7px;padding:7px 8px 11px}
-.mock__bar i{width:9px;height:9px;border-radius:50%;background:#4a4e57;display:block}
-.mock__title{margin-left:auto;color:#8b909b;font-size:10px;font-family:var(--mono)}
-.mock__body{display:grid;grid-template-columns:52px 1fr 118px;gap:8px;height:330px}
-.mock__col{background:#181b21;border:1px solid #262b33;border-radius:var(--r-md);padding:10px 8px}
-.mock__icon{height:22px;border-radius:5px;background:#262b33;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:#7d8592;font-size:10px}
-.mock__icon.is-on{background:var(--accent);color:#fff}
-.mock__line{height:6px;border-radius:4px;background:#2a2f37;margin:9px 0}
-.mock__line.w70{width:70%}.mock__line.w45{width:45%}.mock__line.w85{width:85%}
-.mock__label{color:#7d8592;font-size:9px;text-transform:uppercase;letter-spacing:.1em;margin:12px 0 7px}
-.mock__canvas{background:linear-gradient(145deg,#f7f3ec,#e9e4da);border-radius:var(--r-md);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.card{background:#26251E;color:#fff;width:74%;aspect-ratio:1;border-radius:4px;padding:22px;box-shadow:var(--sh-md);display:flex;flex-direction:column;justify-content:space-between}
-.card__k{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#b9b6ac}
-.card__t{font-size:clamp(15px,2vw,22px);font-weight:700;line-height:1.15;letter-spacing:-.03em}
-.card__b{width:46px;height:3px;background:var(--accent);border-radius:2px}
-.mock__swatch{height:20px;border-radius:5px;margin-bottom:7px;border:1px solid #333840}
-.mock__foot{display:flex;gap:6px;margin-top:14px}
-.mock__foot button{flex:1;font:600 9px var(--font);padding:7px 4px;border-radius:5px;border:1px solid #343a44;background:#22262d;color:#c9ced7}
-.mock__foot button:first-child{background:var(--accent);border-color:var(--accent);color:#fff}
+/* hero window mockup */
+.hero-shot{display:flex;align-items:center;justify-content:center}
+.hero-shot img{display:block;width:100%;max-width:560px;height:auto;filter:drop-shadow(0 24px 48px rgba(28,21,76,.18))}
 
 /* sections */
-section{padding:84px 0}
-.sec-head{max-width:640px;margin-bottom:40px}
-.sec-head .eyebrow{margin-bottom:14px}
-h2{font-size:clamp(30px,4vw,44px);line-height:1.1;letter-spacing:-.04em;margin:0 0 14px}
-h2 em{font-style:normal;color:var(--accent)}
-.sec-head p{color:var(--subtle);font-size:16px;margin:0}
-.grid{display:grid;gap:18px}
-.g3{grid-template-columns:repeat(3,1fr)}
-.g4{grid-template-columns:repeat(4,1fr)}
-.tile{background:var(--soft);border:1px solid var(--border);border-radius:var(--r-lg);padding:24px;transition:border-color .15s ease,box-shadow .15s ease,transform .15s ease}
-.tile:hover{border-color:var(--accent-line);box-shadow:var(--sh-md);transform:translateY(-2px)}
-.tile__n{font-family:var(--mono);font-size:11px;color:var(--accent-ink);letter-spacing:.08em}
-.tile h3{font-size:17px;margin:14px 0 8px;letter-spacing:-.02em}
-.tile p{margin:0;color:var(--muted);font-size:14px}
-.tile__ico{width:34px;height:34px;border-radius:9px;background:var(--accent-soft);border:1px solid var(--accent-line);display:flex;align-items:center;justify-content:center;color:var(--accent-ink);font-weight:700;font-size:15px}
+section{padding:76px 0}
+.sec-center{text-align:center;max-width:660px;margin:0 auto 44px}
+.sec-center .pill,.sec-left .pill{margin-bottom:14px}
+h2{font-size:clamp(28px,3.8vw,40px);line-height:1.12;letter-spacing:-.04em;margin:0 0 12px;font-weight:800;color:var(--ink)}
+.sec-sub{color:var(--subtle);font-size:16px;margin:0}
 
-/* band */
-.band{background:var(--night);color:var(--ink-inverse);border-radius:var(--r-xl);padding:46px;display:grid;grid-template-columns:1fr 1fr;gap:46px;align-items:center}
-.band h2 em{color:var(--accent-inverse)}
-.band p{color:#b7bcc5;font-size:15px}
-.band .meta{color:#8f96a2}
-.code{background:#0a0c0f;border:1px solid #2b2f37;border-radius:var(--r-md);padding:16px;font:12px/1.7 var(--mono);color:#d7dce4;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
-code{overflow-wrap:anywhere}
-.code b{color:var(--accent-inverse);font-weight:500}
-.copy{font:600 11px var(--font);background:#22262d;color:#d7dce4;border:1px solid #343a44;border-radius:5px;padding:6px 10px;cursor:pointer;margin-top:10px}
-.copy:hover{border-color:var(--accent-inverse)}
+/* why desktop card container */
+.panel-box{
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(243,242,255,.72));
+  border:1px solid var(--border);border-radius:var(--r-xl);padding:52px 36px;box-shadow:var(--sh-sm);
+}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.tile{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:24px;box-shadow:var(--sh-sm);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+.tile:hover{transform:translateY(-2px);box-shadow:var(--sh-md);border-color:var(--border-strong)}
+.tile__ico{
+  width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent-text);
+  display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;
+}
+.tile__head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.tile__num{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:3px 8px;border-radius:6px}
+.tile h3{font-size:16px;font-weight:700;margin:0 0 6px;letter-spacing:-.02em}
+.tile__head h3{margin:0}
+.tile p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
 
-/* banner image */
-.shot{background:var(--soft);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px;box-shadow:var(--sh-md)}
-.shot img{display:block;width:100%;height:auto;border-radius:var(--r-md)}
-.shot figcaption{font-size:12px;color:var(--muted);padding:12px 6px 4px}
+/* showcase figure */
+.shot{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:12px;box-shadow:var(--sh-lg)}
+.shot img{display:block;width:100%;height:auto;border-radius:12px}
+.shot figcaption{font-size:12px;color:var(--muted);padding:10px 6px 2px}
 
-/* steps */
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:s}
-.step{position:relative;padding-left:52px}
-.step:before{counter-increment:s;content:counter(s,decimal-leading-zero);position:absolute;left:0;top:0;font:600 13px var(--mono);color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--accent-line);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center}
-.step h3{margin:6px 0 7px;font-size:17px}
-.step p{margin:0;color:var(--muted);font-size:14px}
-.step code{font:12px var(--mono);background:var(--panel);padding:2px 6px;border-radius:4px}
+/* privacy terminal card */
+.term{
+  background:#111322;border:1px solid #262942;border-radius:var(--r-xl);padding:18px 22px;
+  box-shadow:var(--sh-lg);color:#E4E7F5;
+}
+.term__dots{display:flex;gap:7px;margin-bottom:16px}
+.term__dots i{width:10px;height:10px;border-radius:50%;display:block}
+.term__dots i:nth-child(1){background:#FC615D}.term__dots i:nth-child(2){background:#FDBC40}.term__dots i:nth-child(3){background:#34C749}
+.term pre{margin:0;font:13px/1.75 var(--mono);color:#CBD5E1;white-space:pre-wrap;word-break:break-word}
+.term .c-blue{color:#60A5FA}.term .c-amber{color:#FBBF24;font-weight:600}.term .c-dim{color:#94A3B8}
 
-/* faq */
-.faq{max-width:820px;margin:0 auto}
-details{background:var(--soft);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:10px;padding:0 18px}
-summary{cursor:pointer;font-weight:600;font-size:15px;padding:17px 0;list-style:none;display:flex;justify-content:space-between;gap:16px}
+/* verification & faq */
+.verify-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:34px;box-shadow:var(--sh-sm)}
+.hash-code{
+  background:#111322;color:#E2E8F0;border-radius:var(--r-md);padding:14px 16px;
+  font:12px/1.7 var(--mono);overflow-x:auto;white-space:pre-wrap;word-break:break-all;margin:14px 0 12px;
+}
+.faq{max-width:820px;margin:28px auto 0}
+details{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:10px;padding:0 18px}
+summary{cursor:pointer;font-weight:600;font-size:15px;padding:16px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px}
 summary::-webkit-details-marker{display:none}
 summary:after{content:"+";color:var(--accent);font-size:20px;line-height:1}
 details[open] summary:after{content:"−"}
-details p{margin:0 0 18px;color:var(--muted);font-size:14px}
-details a{color:var(--accent-ink)}
+details p{margin:0 0 16px;color:var(--muted);font-size:14px}
 
-/* final */
-.final{text-align:center;padding:96px 0;background:linear-gradient(180deg,rgba(251,251,251,.28),rgba(255,241,238,.78))}
-.final h2{max-width:640px;margin:0 auto 16px}
-.final p{color:var(--subtle);max-width:560px;margin:0 auto 26px}
-.final__note{font-size:12px;color:var(--muted);margin-top:16px}
+/* dark wave final CTA */
+.final-wrap{
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(760px 340px at 18% 10%,rgba(124,58,237,.42),transparent 65%),
+    radial-gradient(640px 320px at 85% 85%,rgba(79,70,229,.45),transparent 65%),
+    linear-gradient(155deg,var(--night) 0%,var(--night-2) 55%,#2C1C7A 100%);
+  color:#fff;text-align:center;padding:88px 0;
+}
+.final-wrap .pill{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.2);color:#DDD6FE}
+.final-wrap h2{color:#fff;max-width:680px;margin:14px auto 12px}
+.final-wrap p{color:#C7C4E6;max-width:540px;margin:0 auto 28px}
 
-footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:var(--muted)}
-.footer__row{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center;justify-content:space-between}
-.footer__links{display:flex;flex-wrap:wrap;gap:18px}
+/* footer */
+footer{background:var(--surface);border-top:1px solid var(--border);padding:34px 0;font-size:13px;color:var(--muted)}
+.footer__row{display:flex;flex-wrap:wrap;gap:18px 28px;align-items:center;justify-content:space-between}
+.footer__brand p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.footer__links{display:flex;flex-wrap:wrap;gap:20px;font-weight:500}
 .footer__links a{text-decoration:none}
-.footer__links a:hover{color:var(--accent-ink)}
+.footer__links a:hover{color:var(--accent-text)}
 
-@media(max-width:900px){
-  .hero__grid,.band{grid-template-columns:1fr}
-  .g4{grid-template-columns:repeat(2,1fr)}
-  .g3{grid-template-columns:1fr}
-  .mock__body{height:280px}
-  section{padding:60px 0}
+@media(max-width:920px){
+  .hero__grid,.g2{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr 1fr}
+  .hero-shot{transform:none}
+  section{padding:56px 0}
 }
 @media(max-width:640px){
-  .nav__bar{width:100%;max-width:none;margin:0;padding:0 20px}
-  .hero__grid{grid-template-columns:minmax(0,1fr)}
-  .hero .btn{white-space:normal}
-  .hero .mock{min-width:0}
-  .nav__links,.nav__rule{display:none}
+  .nav__links{display:none}
   .nav__end .btn--ghost{display:none}
-  .burger{display:block}
-  .nav__links.is-open{display:flex;position:absolute;top:64px;left:0;right:0;background:var(--soft);border-bottom:1px solid var(--border);flex-direction:column;align-items:flex-start;padding:18px 20px;gap:14px}
-  .hero{padding:46px 0 36px}
+  .burger{display:inline-flex}
+  .nav__links.is-open{
+    display:flex;position:absolute;top:68px;left:0;right:0;
+    background:var(--surface);border-bottom:1px solid var(--border);
+    flex-direction:column;align-items:flex-start;padding:18px 20px;gap:14px;box-shadow:var(--sh-md);
+  }
+  .hero{padding:44px 0 52px}
+  .g3{grid-template-columns:1fr}
+  .panel-box{padding:32px 18px}
   .cta-row .btn{width:100%}
-  .g4,.steps{grid-template-columns:1fr}
-  .mock__body{grid-template-columns:40px 1fr;height:240px}
-  .mock__col:last-child{display:none}
-  .band{padding:26px}
-  .notice__inner{font-size:12px}
+  .editor-mock{grid-template-columns:1fr}
+  .editor-rail,.editor-side,.editor-props{display:none}
 }
-/* Parallax em camadas: decorativo, fora do fluxo; nunca cobre nav, CTA ou aviso */
-.hero{position:relative;overflow:hidden;isolation:isolate;background:#d9eaf4}
-.hero__grid{position:relative;z-index:2}
-.hero-parallax,.hero__veil{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;user-select:none}
-.hero-parallax img{position:absolute;left:0;top:-10%;width:100%;height:120%;object-fit:cover;object-position:center bottom}
-.hero-parallax img:nth-child(-n+2){will-change:transform}
-.hero__veil{background:linear-gradient(90deg,rgba(251,251,251,.42),rgba(251,251,251,.20) 46%,rgba(251,251,251,.04)),linear-gradient(180deg,rgba(251,251,251,.08),rgba(251,251,251,.18))}
-@media (max-width:640px), (pointer:coarse), (orientation:landscape) and (max-height:480px){.hero-parallax img:nth-child(-n+2){will-change:auto}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}.hero-parallax img{transform:none!important}}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  *,*:before,*:after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+  .hero-parallax [data-speed]{transform:none!important}
+}
 </style>
 </head>
 <body>
@@ -213,210 +241,222 @@ footer{border-top:1px solid var(--border);padding:32px 0;font-size:13px;color:va
 
 <header class="nav">
   <div class="wrap nav__bar">
-    <a class="brand" href="#topo"><img src="assets/favicon.svg" alt=""> OpenDesign</a>
+    <a class="brand" href="#topo">
+      <span class="brand__badge" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="4"/></svg>
+      </span>
+      OpenDesign
+    </a>
     <nav class="nav__links" id="navlinks" aria-label="Navegação principal">
-      <a href="#desktop">Desktop</a><a href="#recursos">Recursos</a><a href="#privacidade">Privacidade</a><a href="#faq">Perguntas</a>
+      <a href="#desktop">Desktop</a>
+      <a href="#recursos">Recursos</a>
+      <a href="#privacidade">Privacidade</a>
+      <a href="#faq">Perguntas</a>
     </nav>
     <div class="nav__end">
       <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">GitHub ↗</a>
-      <a class="btn btn--dark btn--sm" href="#download">Baixar <span aria-hidden="true">→</span></a>
+      <a class="btn btn--primary btn--sm" href="#download">Baixar →</a>
       <button class="burger" id="burger" aria-label="Abrir menu" aria-expanded="false" aria-controls="navlinks">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
     </div>
   </div>
 </header>
 
-<div class="notice" role="note">
-  <div class="wrap notice__inner">
-    <span class="notice__tag">Versão 1.0.0</span>
-    <span><b>OpenDesign para Windows.</b> Executável e instaladores conferidos; tamanho e SHA-256 publicados para você verificar. Código aberto sob licença MIT.</span>
-  </div>
-</div>
-
 <main id="topo" tabindex="-1">
   <section class="hero">
     <div class="hero-parallax" aria-hidden="true">
-      <img class="parallax-layer" data-speed="0.1" src="assets/parallax/ceu.webp" alt="" width="1600" height="773">
-      <img class="parallax-layer" data-speed="0.25" src="assets/parallax/camada1.webp" alt="" width="1600" height="773">
-      <img class="parallax-layer" data-speed="0.45" src="assets/parallax/camada2.webp" alt="" width="1600" height="773">
-      <img class="parallax-layer" data-speed="0.7" src="assets/parallax/camada3.webp" alt="" width="1600" height="773">
-      <img class="parallax-layer" data-speed="1" src="assets/parallax/camada4.webp" alt="" width="1600" height="773">
+      <img class="hero-wave-img" src="assets/hero-wave.png" alt="" data-speed="0.35" decoding="async">
+      <div class="hero-wave--2" data-speed="0.6"></div>
     </div>
-    <div class="hero__veil" aria-hidden="true"></div>
     <div class="wrap hero__grid">
       <div>
-        <span class="eyebrow">Open source · Windows · Gratuito</span>
+        <span class="pill">OpenDesign · Design livre e offline</span>
         <h1>Seu estúdio de design.<br>Em um <em>.exe</em>.</h1>
-        <p class="lede">Crie posts, carrosséis e gráficos profissionais com um editor que roda inteiro na sua máquina. Sem assinatura, sem nuvem, sem instalar Node nem dependências.</p>
+        <p class="lede">Crie posts, carrosséis e gráficos profissionais com um editor que roda offline. Rápido, intuitivo e poderoso, sem instalar nada nem depender da nuvem.</p>
         <div class="cta-row" id="download">
-          <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Baixar instalador Windows (NSIS) — recomendado <span aria-hidden="true">↓</span></a>
+          <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe →</a>
+          <a class="btn btn--ghost" href="#previa">Explorar a interface →</a>
         </div>
-        <div class="cta-row" style="margin-top:10px;gap:10px;align-items:center">
-          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">.exe portátil <span aria-hidden="true">↓</span></a>
-          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI <span aria-hidden="true">↓</span></a>
-          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+        <div class="cta-row" style="margin-top:10px;gap:8px">
+          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Instalador NSIS (recomendado) ↓</a>
+          <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI ↓</a>
         </div>
         <div class="meta">
-          <span><i class="dot"></i> 13,3 MB</span>
-          <span><i class="dot"></i> Windows</span>
-          <span><i class="dot"></i> Versão 1.0.0</span>
+          <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            13,3 MB
+          </span>
+          <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+            Gratuito (MIT)
+          </span>
+          <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Windows 10+
+          </span>
         </div>
       </div>
-      <div class="mock" aria-label="Prévia ilustrativa do editor OpenDesign">
-        <div class="mock__bar"><i></i><i></i><i></i><span class="mock__title">OpenDesign — Posts</span></div>
-        <div class="mock__body">
-          <div class="mock__col">
-            <div class="mock__icon is-on">▦</div><div class="mock__icon">T</div><div class="mock__icon">◯</div><div class="mock__icon">▤</div>
-            <p class="mock__label">Modelos</p><div class="mock__line w85"></div><div class="mock__line w70"></div>
-          </div>
-          <div class="mock__canvas">
-            <div class="card"><span class="card__k">LinkedIn · 1080 × 1080</span><span class="card__t">Design é pensamento que ganhou forma.</span><span class="card__b"></span></div>
-          </div>
-          <div class="mock__col">
-            <p class="mock__label">Camada</p><div class="mock__line w85"></div><div class="mock__line w45"></div>
-            <p class="mock__label">Texto</p><div class="mock__line w70"></div><div class="mock__line w85"></div><div class="mock__line w45"></div>
-            <p class="mock__label">Cor</p><div class="mock__swatch" style="background:#26251E"></div><div class="mock__swatch" style="background:#f5391e"></div>
-            <div class="mock__foot"><button aria-hidden="true" tabindex="-1">Exportar</button><button aria-hidden="true" tabindex="-1">Salvar</button></div>
-          </div>
-        </div>
+
+      <div class="hero-shot">
+        <img src="assets/hero-mockup.png" alt="Prévia em perspectiva do editor OpenDesign" decoding="async">
       </div>
     </div>
   </section>
 
-  <section id="desktop">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Por que desktop</span>
-        <h2>Um aplicativo de verdade,<br>sem virar <em>um serviço</em>.</h2>
-        <p>A versão desktop empacota o editor com Tauri. Você baixa um arquivo, abre e usa — o resto acontece localmente.</p>
+  <section id="desktop" style="padding-top:12px">
+    <div class="wrap panel-box">
+      <div class="sec-center">
+        <span class="pill">Por que o desktop</span>
+        <h2>Um aplicativo de verdade,<br>sem virar um serviço.</h2>
+        <p class="sec-sub">Empacotado com Tauri. Você baixa um arquivo, abre e usa — tudo acontece localmente.</p>
       </div>
-      <div class="grid g3">
-        <article class="tile"><div class="tile__ico">↧</div><h3>Um clique e pronto</h3><p>Dê dois cliques no .exe. Não precisa instalar mais nada.</p></article>
-        <article class="tile"><div class="tile__ico">⌂</div><h3>Seus arquivos ficam aqui</h3><p>Projetos, páginas, brand kits e fontes são salvos em SQLite local, na sua pasta de dados do Windows.</p></article>
-        <article class="tile"><div class="tile__ico">✳</div><h3>Grátis e open source</h3><p>Código aberto sob MIT. Sem plano pago, sem marca d'água, sem vendor lock-in e sem conta para criar.</p></article>
-      </div>
-    </div>
-  </section>
-
-  <section id="recursos" style="background:rgba(255,255,255,.80);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">O que dá para fazer</span>
-        <h2>Tudo o que você espera de um editor — <em>nada que você não precise</em>.</h2>
-        <p>Canvas em retina, templates prontos para redes sociais e exportação que funciona de verdade.</p>
-      </div>
-      <div class="grid g4">
-        <article class="tile"><span class="tile__n">01</span><h3>Canvas Fabric.js</h3><p>Manipulação completa de objetos com renderização retina e desfazer/refazer.</p></article>
-        <article class="tile"><span class="tile__n">02</span><h3>Templates sociais</h3><p>Posts, quote cards, carrosséis e stories com tamanhos prontos para LinkedIn e Instagram.</p></article>
-        <article class="tile"><span class="tile__n">03</span><h3>PNG 2x e PDF</h3><p>Exportação em dobro da resolução e carrossel completo em um único PDF multipágina.</p></article>
-        <article class="tile"><span class="tile__n">04</span><h3>Brand kits</h3><p>Paleta, tipografia e logos que você aplica em um clique e transporta entre instalações.</p></article>
-        <article class="tile"><span class="tile__n">05</span><h3>Fontes próprias</h3><p>Importe TTF, OTF, WOFF e WOFF2 do computador — elas viajam junto com o brand kit.</p></article>
-        <article class="tile"><span class="tile__n">06</span><h3>Campos de template</h3><p>Dê nome a texto e imagem e preencha vários objetos e páginas de uma vez.</p></article>
-        <article class="tile"><span class="tile__n">07</span><h3>Salvamento automático</h3><p>Cada alteração vai para o banco local com debounce. Feche e reabra: está tudo lá.</p></article>
-        <article class="tile"><span class="tile__n">08</span><h3>Modo agente</h3><p>Controles explícitos e semânticos para automação com agentes de IA pela interface.</p></article>
+      <div class="g3">
+        <article class="tile">
+          <div class="tile__ico" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3>Um clique e pronto</h3>
+          <p>Dê dois cliques no .exe. Sem instalar Node, dependências ou configurar servidor.</p>
+        </article>
+        <article class="tile">
+          <div class="tile__ico" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>Seus arquivos ficam aqui</h3>
+          <p>Projetos, páginas, brand kits e fontes são salvos em SQLite local na sua pasta do Windows.</p>
+        </article>
+        <article class="tile">
+          <div class="tile__ico" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3>Grátis e open source</h3>
+          <p>Licença MIT. Sem plano pago, sem marca d'água e sem precisar criar conta.</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <section>
+  <section id="recursos">
     <div class="wrap">
-      <figure class="shot">
-        <img src="assets/readme-banner.png" alt="Prévia da interface do OpenDesign" loading="lazy">
-        <figcaption>O editor OpenDesign em tema claro, com menus em inglês: barras laterais, canvas e painel de propriedades.</figcaption>
+      <div class="sec-center">
+        <span class="pill">O que dá para fazer</span>
+        <h2>Tudo o que você espera de um editor.</h2>
+        <p class="sec-sub">Canvas em retina, templates prontos para redes sociais e exportação que funciona de verdade.</p>
+      </div>
+      <div class="g3">
+        <article class="tile">
+          <div class="tile__head"><span class="tile__num">01</span><h3>Canvas Fabric.js</h3></div>
+          <p>Renderização retina, edição fluida de objetos e desfazer/refazer.</p>
+        </article>
+        <article class="tile">
+          <div class="tile__head"><span class="tile__num">02</span><h3>Templates sociais</h3></div>
+          <p>Posts, carrosséis e stories com tamanhos prontos para LinkedIn e Instagram.</p>
+        </article>
+        <article class="tile">
+          <div class="tile__head"><span class="tile__num">03</span><h3>PNG 2x e PDF</h3></div>
+          <p>Exportação em alta resolução e carrossel completo em PDF multipágina.</p>
+        </article>
+        <article class="tile">
+          <div class="tile__head"><span class="tile__num">04</span><h3>Brand kits</h3></div>
+          <p>Paleta, tipografia e logos aplicados em um clique entre seus projetos.</p>
+        </article>
+        <article class="tile">
+          <div class="tile__head"><span class="tile__num">05</span><h3>Fontes próprias</h3></div>
+          <p>Importe TTF, OTF, WOFF e WOFF2 locais — elas viajam junto com o brand kit.</p>
+        </article>
+        <article class="tile">
+          <div class="tile__head"><span class="tile__num">06</span><h3>Modo agente</h3></div>
+          <p>Automação com agentes de IA para preencher templates e gerar variações.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="previa" style="padding-top:20px">
+    <div class="wrap g2">
+      <div class="sec-left">
+        <span class="pill">Prévia da interface</span>
+        <h2>Sua nova área<br>de trabalho.</h2>
+        <p class="sec-sub" style="margin-bottom:24px">Uma interface nativa, leve e direta ao ponto, com tudo o que você precisa para gerenciar seus projetos.</p>
+        <a class="btn btn--primary" href="#download">Baixar para Windows →</a>
+      </div>
+      <figure class="shot" style="margin:0">
+        <img src="assets/readme-banner.png" alt="Interface do editor OpenDesign com modelos, barras laterais e painel de propriedades" loading="lazy">
+        <figcaption>O editor OpenDesign em tema claro: modelos, barras laterais e painel de propriedades.</figcaption>
       </figure>
     </div>
   </section>
 
-  <section id="privacidade" style="padding-top:0">
-    <div class="wrap band">
-      <div>
-        <span class="eyebrow">Privacidade por arquitetura</span>
-        <h2>Nada sai da <em>sua máquina</em>.</h2>
-        <p>O desktop não depende do backend web. Não há chamada a API remota, não há login e não há telemetria: o editor conversa com um banco SQLite local em <code style="font:12px var(--mono)">%APPDATA%\com.opendesign.app\opendesign.db</code>.</p>
-        <p>É a mesma proposta do projeto como um todo: auto-hospedar, personalizar e manter o controle dos seus dados.</p>
-      </div>
-      <div>
-        <div class="code">app_data_dir/
-└── opendesign.db   <b>← seus projetos</b>
+  <section id="privacidade">
+    <div class="wrap g2">
+      <div class="term" aria-label="Estrutura de armazenamento local">
+        <div class="term__dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <pre><span class="c-blue">app_data_dir/</span>
+└── opendesign.db   <span class="c-dim">← seus projetos</span>
 
-frontend embutido no .exe
-backend web <b>← não usado</b>
-conta / nuvem         <b>← inexistente</b></div>
+<span class="c-blue">backend web</span>   <span class="c-amber">← não usado</span>
+<span class="c-blue">conta / nuvem</span> <span class="c-amber">← inexistente</span></pre>
       </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="wrap">
-      <div class="sec-head"><span class="eyebrow">Como começar</span><h2>Três passos. <em>Sem terminal.</em></h2></div>
-      <div class="steps">
-        <article class="step"><h3>Baixe o executável</h3><p>Um arquivo de ~13,3 MB. Confira o hash na seção abaixo antes de abrir.</p></article>
-        <article class="step"><h3>Execute no Windows</h3><p>Dois cliques. O app mostra a splash e abre o editor — sem <code>install</code> e sem serviços.</p></article>
-        <article class="step"><h3>Crie e exporte</h3><p>Escolha um template, edite no canvas e exporte PNG ou PDF. Seus projetos ficam salvos localmente.</p></article>
+      <div class="sec-left">
+        <span class="pill">Privacidade por arquitetura</span>
+        <h2>Nada sai da sua<br>máquina.</h2>
+        <p class="sec-sub">Sem API remota, sem login e sem telemetria. Tudo fica no seu banco SQLite local em <code>%APPDATA%\com.opendesign.app\opendesign.db</code>.</p>
       </div>
     </div>
   </section>
 
-  <section id="verificacao" style="background:rgba(255,255,255,.80);border-top:1px solid var(--border)">
-    <div class="wrap">
-      <div class="sec-head">
-        <span class="eyebrow">Verifique antes de usar</span>
-        <h2>Conheça exatamente <em>o que você baixou</em>.</h2>
-        <p>O binário publicado tem 13.946.880 bytes e este SHA-256, conferidos em disco:</p>
+  <section id="verificacao" style="padding-top:16px">
+    <div class="wrap verify-box">
+      <span class="pill">Verifique antes de executar</span>
+      <h2 style="font-size:28px;margin:12px 0 8px">Integridade por SHA-256</h2>
+      <p class="sec-sub" style="font-size:14px">Confira o hash do executável publicado (13.946.880 bytes):</p>
+      <div class="hash-code" id="hash">D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74</div>
+      <div class="cta-row" style="gap:10px">
+        <button class="btn btn--ghost btn--sm" type="button" id="copyhash">Copiar SHA-256 do binário</button>
+        <a class="btn btn--ghost btn--sm" href="https://github.com/TyagoAlves/OpenDesign-Rust#verificar-o-binário" target="_blank" rel="noopener">Como verificar (NSIS/MSI) ↗</a>
       </div>
-      <div class="code" id="hash">D57E2866D9BF7390A799882137060761222CC1F53A200C0AEA94AA147A8ACF74</div>
-      <button class="copy" id="copyhash">Copiar SHA-256 do binário</button>
-      <p style="color:var(--muted);font-size:13px;max-width:760px;margin:8px 0 0"><b>Windows SmartScreen:</b> por ser open-source (exe/msi sem assinatura paga), o Windows pode exibir aviso; confira o SHA-256 antes de executar (ex.: <code style="font:12px var(--mono)">Get-FileHash .\OpenDesign.exe -Algorithm SHA256</code>).</p>
-      <p style="color:var(--muted);font-size:14px;max-width:760px">Os pacotes MSI e NSIS contêm o mesmo executável publicado acima. Para conferir, calcule o SHA-256 do arquivo baixado e compare com o valor mostrado. O procedimento está no <a href="https://github.com/TyagoAlves/OpenDesign-Rust#verificar-o-binário" target="_blank" rel="noopener" style="color:var(--accent-ink)">README do projeto ↗</a> e o relatório completo em <a href="https://github.com/TyagoAlves/OpenDesign-Rust/blob/main/docs/qa-golive-desktop.md" target="_blank" rel="noopener" style="color:var(--accent-ink)">docs/qa-golive-desktop.md ↗</a>.</p>
-      <p style="color:var(--muted);font-size:13px;max-width:760px;margin-top:18px"><b>Instaladores — contêm o mesmo executável:</b></p>
-      <div class="code">OpenDesign_1.0.0_x64-setup.exe  (NSIS)  4.983.351 bytes
-SHA-256 FCD3949E3313484F311C56416EB31F752BF60053662CA805ADE7838F658EF1DD
+      <p style="color:var(--muted);font-size:13px;margin:12px 0 0"><b>Windows SmartScreen:</b> por ser open-source sem assinatura paga, o Windows pode exibir aviso; confira o SHA-256 com <code>Get-FileHash .\OpenDesign.exe -Algorithm SHA256</code>.</p>
 
-OpenDesign_1.0.0_x64_en-US.msi  (MSI)  6.295.552 bytes
-SHA-256 3DA0A28ABCADCA7D7200D03B577891AF8046DE0FE7AC27B5DADFB5F1F25268BB</div>
-    </div>
-  </section>
-
-  <section id="faq">
-    <div class="wrap">
-      <div class="sec-head"><span class="eyebrow">Perguntas frequentes</span><h2>Antes de baixar.</h2></div>
-      <div class="faq">
-        <details><summary>O OpenDesign é realmente gratuito?</summary><p>Sim. O projeto é open-source sob licença MIT. Não há assinatura, plano pago ou marca d'água. O binário desktop é distribuído sem custo.</p></details>
-        <details><summary>Preciso instalar algo para usar o .exe?</summary><p>Não. O executável já traz o editor e tudo o que ele precisa. Não é preciso instalar Node.js, pnpm ou um banco externo.</p></details>
-        <details><summary>Como sei que este executável passou na verificação?</summary><p>Publicamos o tamanho e o SHA-256 para você conferir. O executável extraído do MSI e do NSIS tem o mesmo SHA-256. Você também pode instalar, reiniciar e desinstalar o aplicativo.</p></details>
-        <details><summary>Qual a diferença entre o .exe, o NSIS e o MSI?</summary><p><b>.exe</b>: portátil, sem instalação — basta executar. <b>NSIS</b>: instalador com atalhos e desinstalação limpa, a opção recomendada. <b>MSI</b>: instalador alternativo para implantação corporativa; o executável foi extraído do pacote e comparado ao original. Os três contêm o mesmo executável.</p></details>
-        <details><summary>Onde meus projetos são salvos?</summary><p>Em um arquivo SQLite na pasta de dados do aplicativo no Windows: <code>%APPDATA%\com.opendesign.app\opendesign.db</code>. Nada é enviado para servidores.</p></details>
-        <details><summary>Dá para usar os arquivos comercialmente?</summary><p>O código é MIT. Você pode usar o editor, adaptá-lo e distribuir seu trabalho. A marca OpenDesign e os logos permanecem com seus respectivos donos.</p></details>
-        <details><summary>Esta página é independente?</summary><p>Sim. É uma landing do fork <code>TyagoAlves/OpenDesign-Rust</code>. Identidade, textos e assets são do próprio projeto OpenDesign; não há vínculo com projetos de terceiros.</p></details>
-        <details><summary>O painel “Acesso do agente” (MCP) já vem no download?</summary><p>Os instaladores 1.0.0 linkados acima não incluem esse recurso. Ele está disponível no <a href="https://github.com/TyagoAlves/OpenDesign-Rust/releases/tag/v1.1.0-beta-mcp-r6">beta v1.1.0-beta-mcp-r6 ↗</a>: serviço somente local (<code>127.0.0.1</code>), desligado por padrão, com token por sessão e confirmação por arquivo antes de gravar. SHA-256 dos arquivos do beta:<br><code style="word-break:break-all">app.exe — 14.043.136 B — 37C2A272E0424F51EC11BB1FCEF7DE7C2E8F3B728A3543FB6F04DB953824A01D</code><br><code style="word-break:break-all">OpenDesign_1.1.0-1_x64-setup.exe — 5.019.454 B — DCE1094C717FCFB5559FFBEF8A5D457B5FC239EFAA6B736349D6674B0816757C</code><br><code style="word-break:break-all">OpenDesign_1.1.0-1_x64_en-US.msi — 6.348.800 B — B7AEFF92F676BBB16E8D7746B639DA35F436666D8532F0175EBBB5BB109D9DDC</code></p></details>
+      <div class="faq" id="faq">
+        <details><summary>O OpenDesign é realmente gratuito?</summary><p>Sim. Código aberto sob licença MIT, sem assinatura, sem plano pago e sem marca d'água.</p></details>
+        <details><summary>Preciso instalar Node.js ou banco de dados?</summary><p>Não. O executável já embute tudo e salva localmente em SQLite.</p></details>
+        <details><summary>Qual a diferença entre o .exe, o NSIS e o MSI?</summary><p><b>.exe</b> é portátil (basta abrir). <b>NSIS</b> cria atalhos e desinstalação limpa (recomendado). <b>MSI</b> é voltado a implantação corporativa.</p></details>
+        <details><summary>Onde meus projetos são salvos?</summary><p>Em <code>%APPDATA%\com.opendesign.app\opendesign.db</code>, na sua própria máquina.</p></details>
       </div>
     </div>
   </section>
 
-  <section class="final">
+  <section class="final-wrap">
     <div class="wrap">
-      <span class="eyebrow">Código aberto · execução local</span>
+      <span class="pill">Versão 1.0.0 · Código aberto MIT</span>
       <h2>Faça design sem depender de ninguém.</h2>
-      <p>Baixe o OpenDesign para Windows, explore o editor e acompanhe o projeto. Versão 1.0.0, código aberto sob MIT, com SHA-256 publicado para conferência.</p>
-      <div class="cta-row" style="justify-content:center;margin-top:20px">
-        <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe <span aria-hidden="true">↓</span></a>
-        <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Instalador NSIS <span aria-hidden="true">↓</span></a>
-        <a class="btn btn--ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI <span aria-hidden="true">↓</span></a>
+      <p>Leve, rápido e 100% offline. Baixe a versão portátil ou o instalador para Windows.</p>
+      <div class="cta-row" style="justify-content:center">
+        <a class="btn btn--primary" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign.exe">Baixar OpenDesign.exe →</a>
+        <a class="btn btn--dark-ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64-setup.exe">Instalador NSIS ↓</a>
+        <a class="btn btn--dark-ghost" href="https://github.com/TyagoAlves/OpenDesign-Rust/raw/refs/heads/main/Release/OpenDesign_1.0.0_x64_en-US.msi">Instalador MSI ↓</a>
       </div>
-      <p class="final__note">Versão 1.0.0 · SHA-256 verificável · código aberto sob MIT</p>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap footer__row">
-    <span>© 2026 OpenDesign · MIT · Landing independente do fork TyagoAlves/OpenDesign-Rust.</span>
-    <span class="footer__links">
+    <div class="footer__brand">
+      <a class="brand" href="#topo" style="font-size:15px">
+        <span class="brand__badge" style="width:24px;height:24px;border-radius:7px" aria-hidden="true">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="4"/></svg>
+        </span>
+        OpenDesign
+      </a>
+      <p>Design livre. Sem limites. · © 2026 OpenDesign · MIT</p>
+    </div>
+    <div class="footer__links">
       <a href="https://github.com/TyagoAlves/OpenDesign-Rust" target="_blank" rel="noopener">Repositório ↗</a>
       <a href="https://github.com/TyagoAlves/OpenDesign-Rust#baixar-o-exe" target="_blank" rel="noopener">Documentação ↗</a>
       <a href="#topo">Voltar ao topo ↑</a>
-    </span>
+    </div>
   </div>
 </footer>
 
@@ -424,11 +464,28 @@ SHA-256 3DA0A28ABCADCA7D7200D03B577891AF8046DE0FE7AC27B5DADFB5F1F25268BB</div>
 <script>
 (function(){
   var b=document.getElementById('burger'),n=document.getElementById('navlinks');
-  if(b&&n){b.addEventListener('click',function(){var o=n.classList.toggle('is-open');b.setAttribute('aria-expanded',String(o));b.setAttribute('aria-label',o?'Fechar menu':'Abrir menu')});
-    n.addEventListener('click',function(e){if(e.target.tagName==='A'){n.classList.remove('is-open');b.setAttribute('aria-expanded','false')}})}
+  if(b&&n){
+    b.addEventListener('click',function(){
+      var o=n.classList.toggle('is-open');
+      b.setAttribute('aria-expanded',String(o));
+      b.setAttribute('aria-label',o?'Fechar menu':'Abrir menu');
+    });
+    n.addEventListener('click',function(e){
+      if(e.target.tagName==='A'){n.classList.remove('is-open');b.setAttribute('aria-expanded','false');}
+    });
+  }
   var c=document.getElementById('copyhash');
-  if(c){c.addEventListener('click',function(){var t=document.getElementById('hash').textContent.trim();
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){c.textContent='Copiado ✓';setTimeout(function(){c.textContent='Copiar SHA-256 do binário'},1800)},function(){c.textContent='Selecione e copie'})}else{c.textContent='Selecione e copie'}})}
+  if(c){
+    c.addEventListener('click',function(){
+      var t=document.getElementById('hash').textContent.trim();
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t).then(function(){
+          c.textContent='Copiado ✓';
+          setTimeout(function(){c.textContent='Copiar SHA-256 do binário'},1800);
+        },function(){c.textContent='Selecione e copie';});
+      }else{c.textContent='Selecione e copie';}
+    });
+  }
 })();
 </script>
 </body>
