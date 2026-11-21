@@ -141,7 +141,7 @@ export function App() {
       <>
       {hostNav}
       {persistenceError}
-      <Settings />
+      <Settings navigate={navigate} />
       </>
     );
   }

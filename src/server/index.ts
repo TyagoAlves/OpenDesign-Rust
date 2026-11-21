@@ -7,7 +7,7 @@ import { bodyLimit } from "hono/body-limit";
 
 type Env = { Bindings: { DB: D1Database; UPLOADS: R2Bucket } };
 
-const app = createApp<Env>({ title: "OpenDesign API", version: "1.1.0-beta-mcp" });
+const app = createApp<Env>({ title: "OpenDesign API", version: "1.1.0-1" });
 
 // ── Starter templates ───────────────────────────────────────────────
 //

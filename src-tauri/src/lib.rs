@@ -61,20 +61,11 @@ fn app_ready(app: AppHandle, state: State<'_, Mutex<SplashState>>) {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
-    // Banco local do OpenDesign (preservado: foi perdido num overwrite concorrente).
-    .plugin(
-      tauri_plugin_sql::Builder::default()
-        .add_migrations(
-          "sqlite:opendesign.db",
-          vec![tauri_plugin_sql::Migration {
-            version: 1,
-            description: "designs, pages, templates e brand kits (locais)",
-            sql: include_str!("../migrations/0001_init.sql"),
-            kind: tauri_plugin_sql::MigrationKind::Up,
-          }],
-        )
-        .build(),
-    )
+    // Banco local do OpenDesign. O schema é garantido no cliente (local-db.ts)
+    // com DDL idempotente (CREATE TABLE/INDEX IF NOT EXISTS), evitando falhas de
+    // checksum de migração do plugin em bancos já existentes (ex.: "migration 1
+    // was previously applied but has been modified").
+    .plugin(tauri_plugin_sql::Builder::default().build())
     // Diálogo nativo "Salvar como": `pick_save_path` abre o diálogo no Rust e
     // devolve { path, nonce }; export_png/export_pdf aceitam o destino só com
     // esse nonce one-shot, ainda não usado (autorizado pelo Tyago).

@@ -48,6 +48,50 @@ export function handles(path: string): boolean {
   return /^\/api\/(designs|pages|templates|brand-kits|fonts|uploads)(\/|$)/.test(path);
 }
 
+const CORE_SCHEMA_STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS designs (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL DEFAULT 'Untitled Design',
+  canvas_json TEXT NOT NULL DEFAULT '{}',
+  width INTEGER NOT NULL DEFAULT 1080,
+  height INTEGER NOT NULL DEFAULT 1080,
+  thumbnail_url TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`,
+  `CREATE TABLE IF NOT EXISTS pages (
+  id TEXT PRIMARY KEY,
+  design_id TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT 'Page 1',
+  canvas_json TEXT NOT NULL DEFAULT '{}',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (design_id) REFERENCES designs(id) ON DELETE CASCADE
+)`,
+  `CREATE INDEX IF NOT EXISTS idx_pages_design ON pages(design_id, sort_order)`,
+  `CREATE TABLE IF NOT EXISTS templates (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  canvas_json TEXT NOT NULL,
+  width INTEGER NOT NULL,
+  height INTEGER NOT NULL,
+  thumbnail_url TEXT,
+  sort_order INTEGER NOT NULL DEFAULT 0
+)`,
+  `CREATE INDEX IF NOT EXISTS idx_templates_category ON templates(category, sort_order)`,
+  `CREATE TABLE IF NOT EXISTS brand_kits (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL DEFAULT 'My Brand',
+  colors TEXT NOT NULL DEFAULT '[]',
+  heading_font TEXT NOT NULL DEFAULT 'Montserrat',
+  body_font TEXT NOT NULL DEFAULT 'Inter',
+  logos TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+)`,
+];
+
 const UPLOADS_DDL = `CREATE TABLE IF NOT EXISTS uploads (
   key TEXT PRIMARY KEY,
   mime TEXT NOT NULL,
@@ -73,6 +117,9 @@ function getDb(): Promise<void> {
   if (!dbReady) {
     dbReady = (async () => {
       await internal()("plugin:sql|load", { db: DB_URL, options: { autoCreate: true } });
+      for (const stmt of CORE_SCHEMA_STATEMENTS) {
+        await rawExecute(stmt);
+      }
       await rawExecute(UPLOADS_DDL);
       const existing = await rawSelect<{ c: number }>("SELECT COUNT(*) as c FROM templates");
       if ((Number(existing[0]?.c) || 0) === 0) {

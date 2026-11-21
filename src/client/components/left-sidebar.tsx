@@ -11,7 +11,10 @@ import {
   LayoutGrid,
   Sparkles,
   SwatchBook,
+  Settings,
 } from "lucide-preact";
+import { tr } from "../i18n";
+import { isTauri } from "../lib/tauri";
 import { useEditor } from "../context";
 import { TemplateCard } from "./template-card";
 import { DesignList } from "./design-list";
@@ -56,7 +59,7 @@ const BG_COLORS = [
 ];
 
 export function LeftSidebar() {
-  const { addText, addShape, addImage, setBackground, templates, loadTemplate } = useEditor();
+  const { addText, addShape, addImage, setBackground, templates, loadTemplate, navigate } = useEditor();
   const [activeSection, setActiveSection] = useState<Section | null>("templates");
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -131,6 +134,17 @@ export function LeftSidebar() {
             <span class="text-[10px] leading-tight">{s.label}</span>
           </button>
         ))}
+        {isTauri() && (
+          <button
+            type="button"
+            class="mt-auto mb-2 flex flex-col items-center justify-center gap-0.5 w-[56px] h-[56px] rounded-lg bg-transparent border-none cursor-pointer transition-all text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50"
+            onClick={() => navigate("/settings")}
+            title={tr("Configurações")}
+          >
+            <Settings size={20} />
+            <span class="text-[10px] leading-tight">{tr("Configurações")}</span>
+          </button>
+        )}
       </div>
 
       {/* Content Panel */}

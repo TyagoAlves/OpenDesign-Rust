@@ -1,5 +1,7 @@
 import { useState, useCallback } from "preact/hooks";
-import { Plus, Trash2, Edit3, Sparkles } from "lucide-preact";
+import { Plus, Trash2, Edit3, Sparkles, Settings } from "lucide-preact";
+import { tr } from "../i18n";
+import { isTauri } from "../lib/tauri";
 import type { Design, Template } from "../types";
 import { api } from "../api";
 import { TemplateCard } from "./template-card";
@@ -61,13 +63,25 @@ export function Home({
               {designs.length} projeto{designs.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <button
-            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border-none cursor-pointer bg-[#6366f1] text-white hover:bg-[#5558e6] transition-all shadow-sm"
-            onClick={handleCreate}
-          >
-            <Plus size={15} />
-            Novo projeto
-          </button>
+          <div class="flex items-center gap-2">
+            {isTauri() && (
+              <button
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-zinc-200 bg-white text-zinc-700 cursor-pointer hover:bg-zinc-50 transition-all"
+                onClick={() => navigate("/settings")}
+                title={tr("Configurações")}
+              >
+                <Settings size={15} />
+                {tr("Configurações")}
+              </button>
+            )}
+            <button
+              class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold border-none cursor-pointer bg-[#6366f1] text-white hover:bg-[#5558e6] transition-all shadow-sm"
+              onClick={handleCreate}
+            >
+              <Plus size={15} />
+              Novo projeto
+            </button>
+          </div>
         </div>
       </div>
 
